@@ -44,6 +44,7 @@ glia-sync-doctor = "glia_shopify_sync.doctor:main"
 glia-sync-setup-erpnext = "glia_shopify_sync.setup_erpnext:main"
 glia-sync-send-test = "glia_shopify_sync.send_test:main"
 glia-sync-backfill = "glia_shopify_sync.backfill:main"
+glia-sync-daily = "glia_shopify_sync.daily_run:main"
 
 [project.urls]
 Homepage = "https://github.com/glia/glia-shopify-erpnext"

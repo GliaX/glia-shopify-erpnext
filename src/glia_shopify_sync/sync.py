@@ -12,13 +12,17 @@ source is an iterable (tests pass a list; the CLI passes `ShopifyClient.iter_ord
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from itertools import islice
 from typing import Any
 
 import structlog
 
 from .crm_mapping import donation_to_doc, donor_to_contact
+from .frappe_client import FrappeClient
+from .shopify_client import ShopifyClient, TokenManager
 from .transform import transform_order
 
 log = structlog.get_logger()
@@ -161,4 +165,79 @@ def _ensure_donation(
         stats.errors.append(f"donation {donation.shopify_order_name}: {e}")
 
 
-__all__ = ["SyncStats", "load_contact_map", "load_donation_keys", "process_orders"]
+def build_clients(cfg: Any) -> tuple[ShopifyClient, FrappeClient]:
+    """Construct Shopify + Frappe clients from app config."""
+    s = cfg.settings
+    shopify = ShopifyClient(
+        TokenManager(
+            shop_domain=s.shopify_shop_domain,
+            client_id=s.shopify_client_id,
+            client_secret=s.shopify_client_secret.get_secret_value(),
+        ),
+        api_version=s.shopify_api_version,
+        page_size=cfg.yaml.sync.page_size,
+    )
+    frappe = FrappeClient(
+        base_url=s.erpnext_base_url,
+        api_key=s.erpnext_api_key,
+        api_secret=s.erpnext_api_secret.get_secret_value(),
+    )
+    return shopify, frappe
+
+
+def run_sync(
+    cfg: Any,
+    shopify: ShopifyClient,
+    frappe: FrappeClient,
+    state: Any,
+    *,
+    since: str | None = None,
+    dry_run: bool = False,
+    limit: int | None = None,
+) -> SyncStats:
+    """Run one sync pass using a state backend (get_cursor/set_cursor).
+
+    `since` overrides the cursor; otherwise it resumes from the cursor (daily
+    incremental), falling back to the configured backfill window on first run.
+    """
+    effective_since = since or state.get_cursor() or cfg.yaml.backfill.since
+    log.info("sync_start", since=effective_since, dry_run=dry_run, limit=limit)
+    orders = shopify.iter_orders(since=effective_since)
+    if limit:
+        orders = islice(orders, limit)
+
+    stats = process_orders(
+        orders,
+        frappe,
+        donation_gids=cfg.donation_product_gids,
+        recurring_gids=cfg.recurring_product_gids,
+        tip_mode=cfg.yaml.tip_mode,
+        include_test_orders=cfg.yaml.sync.include_test_orders,
+        paid_only=cfg.yaml.sync.paid_only,
+        dry_run=dry_run,
+    )
+    if not dry_run and stats.last_processed_at:
+        state.set_cursor(stats.last_processed_at)
+    return stats
+
+
+def report_stats(stats: SyncStats) -> int:
+    """Print stats + errors; return process exit code (0 ok, 1 if any errors)."""
+    print(stats)
+    for err in stats.errors[:20]:
+        print(f"  error: {err}", file=sys.stderr)
+    if stats.errors:
+        print(f"\n{len(stats.errors)} error(s).", file=sys.stderr)
+        return 1
+    return 0
+
+
+__all__ = [
+    "SyncStats",
+    "build_clients",
+    "load_contact_map",
+    "load_donation_keys",
+    "process_orders",
+    "report_stats",
+    "run_sync",
+]

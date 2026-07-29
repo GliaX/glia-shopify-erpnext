@@ -89,6 +89,42 @@ class State:
         data.setdefault("daily", {})["last_run_at"] = ts
         self.save(data)
 
+    # --- incremental-sync cursor (backend-agnostic protocol) ------------
+
+    def get_cursor(self) -> str | None:
+        return self.get_backfill_cursor()
+
+    def set_cursor(self, processed_at: str | None) -> None:
+        self.set_backfill_cursor(None, processed_at=processed_at)
+
+
+class FrappeState:
+    """Stateless cursor store backed by the `Glia Sync State` singleton in ERPNext.
+
+    Lets the daily CronJob pod be stateless (no PVC): it reads/writes the
+    incremental-sync cursor via the Frappe REST API. Implements the same
+    get_cursor/set_cursor protocol as `State`.
+    """
+
+    SINGLETON = "Glia Sync State"
+
+    def __init__(self, frappe) -> None:
+        self.frappe = frappe
+
+    def get_cursor(self) -> str | None:
+        from .frappe_client import FrappeError
+
+        try:
+            v = self.frappe.get_value(self.SINGLETON, self.SINGLETON, "last_processed_at")
+        except FrappeError:
+            return None
+        if isinstance(v, dict):
+            v = v.get("last_processed_at")
+        return v or None
+
+    def set_cursor(self, processed_at: str | None) -> None:
+        self.frappe.set_value(self.SINGLETON, self.SINGLETON, {"last_processed_at": processed_at})
+
 
 # --- helpers --------------------------------------------------------------
 
@@ -115,4 +151,4 @@ def _now_suffix() -> str:
     return str(int(time.time()))
 
 
-__all__ = ["State"]
+__all__ = ["FrappeState", "State"]

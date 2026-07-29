@@ -4,7 +4,31 @@ from __future__ import annotations
 
 import json
 
-from glia_shopify_sync.state import State
+from glia_shopify_sync.state import FrappeState, State
+
+
+class _FakeFrappe:
+    """Minimal fake supporting get_value/set_value for FrappeState."""
+
+    def __init__(self) -> None:
+        self.val: str | None = None
+        self.set_calls: list[dict] = []
+
+    def get_value(self, doctype, name, field):
+        return {field: self.val}
+
+    def set_value(self, doctype, name, values):
+        self.set_calls.append(values)
+        self.val = values.get("last_processed_at")
+
+
+def test_frappe_state_get_set_cursor_round_trip():
+    f = _FakeFrappe()
+    st = FrappeState(f)
+    assert st.get_cursor() is None  # nothing stored yet
+    st.set_cursor("2026-07-29T12:00:00Z")
+    assert f.set_calls == [{"last_processed_at": "2026-07-29T12:00:00Z"}]
+    assert st.get_cursor() == "2026-07-29T12:00:00Z"
 
 
 def test_state_round_trips(tmp_path):

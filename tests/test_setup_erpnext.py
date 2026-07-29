@@ -21,5 +21,10 @@ def test_run_setup_is_idempotent(fake_frappe: FakeFrappeClient):
     run_setup(fake_frappe)
     second = run_setup(fake_frappe)
     assert all(r.action == "exists" for r in second)
-    donation_inserts = [d for d in fake_frappe.inserted if d.get("doctype") == "DocType"]
+    # Each DocType is inserted exactly once across both runs.
+    donation_inserts = [
+        d
+        for d in fake_frappe.inserted
+        if d.get("doctype") == "DocType" and d.get("name") == "Donation"
+    ]
     assert len(donation_inserts) == 1

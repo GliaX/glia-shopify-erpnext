@@ -25,6 +25,7 @@ from .donation_doctype import (
     contact_custom_fields,
     donation_doctype_def,
     glia_module_def,
+    sync_state_doctype_def,
 )
 from .frappe_client import FrappeClient, FrappeError
 
@@ -43,6 +44,7 @@ def run_setup(client: FrappeClient) -> list[StepResult]:
     results.append(_ensure_module(client))
     results.extend(_ensure_contact_custom_fields(client))
     results.append(_ensure_donation_doctype(client))
+    results.append(_ensure_sync_state_doctype(client))
     return results
 
 
@@ -73,6 +75,10 @@ def _ensure_contact_custom_fields(client: FrappeClient) -> list[StepResult]:
 
 def _ensure_donation_doctype(client: FrappeClient) -> StepResult:
     return _ensure_doc(client, "DocType", "Donation", donation_doctype_def())
+
+
+def _ensure_sync_state_doctype(client: FrappeClient) -> StepResult:
+    return _ensure_doc(client, "DocType", "Glia Sync State", sync_state_doctype_def())
 
 
 def _ensure_doc(
@@ -118,7 +124,10 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.dry_run:
-        print("Dry run — would ensure: Glia module, Contact.shopify_customer_id, Donation doctype")
+        print(
+            "Dry run — would ensure: Glia module, Contact.shopify_customer_id, "
+            "Donation doctype, Glia Sync State doctype"
+        )
         return 0
 
     try:

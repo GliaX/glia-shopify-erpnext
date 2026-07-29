@@ -137,6 +137,19 @@ class FrappeClient:
         )
         return _data(resp)
 
+    def set_value(self, doctype: str, name: str, values: dict[str, Any]) -> Any:
+        """Set one or more fields via frappe.client.set_value.
+
+        For a singleton doctype, this creates the single record if missing.
+        `values` is a {fieldname: value} dict.
+        """
+        resp = self._request(
+            "POST",
+            "/api/method/frappe.client.set_value",
+            json={"doctype": doctype, "name": name, "fieldname": values},
+        )
+        return _data(resp)
+
     def get_list(
         self,
         doctype: str,
@@ -286,10 +299,17 @@ class _TransientError(Exception):
 
 
 def _data(resp: FrappeResponse) -> Any:
-    """Pull Frappe's `{"data": ...}` envelope (or fall back to the raw body)."""
+    """Pull Frappe's response envelope.
+
+    Resource endpoints wrap as `{"data": ...}`; RPC method endpoints
+    (`frappe.client.*`) wrap as `{"message": ...}`. Unwrap either; else raw body.
+    """
     body = resp.json_data
-    if isinstance(body, dict) and "data" in body:
-        return body["data"]
+    if isinstance(body, dict):
+        if "data" in body:
+            return body["data"]
+        if "message" in body:
+            return body["message"]
     return body
 
 

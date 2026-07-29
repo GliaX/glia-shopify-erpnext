@@ -171,8 +171,39 @@ def glia_module_def() -> dict[str, Any]:
     }
 
 
+def sync_state_doctype_def() -> dict[str, Any]:
+    """Singleton `Glia Sync State` doctype holding the incremental-sync cursor.
+
+    Stored in ERPNext so the daily CronJob pod is stateless (no PVC needed): it
+    reads/writes `last_processed_at` here via the REST API.
+    """
+    return {
+        "doctype": "DocType",
+        "name": "Glia Sync State",
+        "module": DONATION_MODULE,
+        "custom": 1,
+        "issingle": 1,
+        "autoname": "hash",
+        "naming_rule": "Expression",
+        "track_changes": 0,
+        "fields": [
+            {
+                "fieldname": "last_processed_at",
+                "label": "Last Processed At",
+                "fieldtype": "Data",
+                "length": 40,
+            },
+        ],
+        "permissions": [
+            {"role": "System Manager", "read": 1, "write": 1},
+            {"role": "Sales Manager", "read": 1, "write": 1},
+        ],
+    }
+
+
 __all__ = [
     "contact_custom_fields",
     "donation_doctype_def",
     "glia_module_def",
+    "sync_state_doctype_def",
 ]
