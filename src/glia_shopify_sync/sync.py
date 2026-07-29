@@ -119,7 +119,15 @@ def process_orders(
             continue  # error already recorded
 
         for donation in result.donations:
-            _ensure_donation(frappe, donation, contact_name, donation_keys, stats, dry_run)
+            _ensure_donation(
+                frappe,
+                donation,
+                contact_name,
+                result.donor.email or "",
+                donation_keys,
+                stats,
+                dry_run,
+            )
 
     return stats
 
@@ -147,7 +155,13 @@ def _ensure_contact(
 
 
 def _ensure_donation(
-    frappe: Any, donation: Any, contact_name: str, keys: set[str], stats: SyncStats, dry_run: bool
+    frappe: Any,
+    donation: Any,
+    contact_name: str,
+    donor_email: str,
+    keys: set[str],
+    stats: SyncStats,
+    dry_run: bool,
 ) -> None:
     key = f"{donation.shopify_order_id}|{donation.shopify_line_item_id}"
     if key in keys:
@@ -158,7 +172,7 @@ def _ensure_donation(
             stats.donations_created += 1
             keys.add(key)
             return
-        frappe.insert(donation_to_doc(donation, contact_name=contact_name))
+        frappe.insert(donation_to_doc(donation, contact_name=contact_name, donor_email=donor_email))
         keys.add(key)
         stats.donations_created += 1
     except Exception as e:  # noqa: BLE001

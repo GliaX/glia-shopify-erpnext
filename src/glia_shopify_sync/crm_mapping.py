@@ -40,12 +40,15 @@ def donor_to_contact(donor: Donor) -> dict[str, Any]:
     }
 
 
-def donation_to_doc(donation: Donation, *, contact_name: str) -> dict[str, Any]:
+def donation_to_doc(
+    donation: Donation, *, contact_name: str, donor_email: str = ""
+) -> dict[str, Any]:
     """Donation -> custom `Donation` document, linked to its Contact."""
     return {
         "doctype": "Donation",
         "contact": contact_name,
         "donor_name": _donor_label(donation),
+        "donor_email": donor_email,
         "donation_date": donation.date,
         "amount": _to_float(donation.amount),
         "currency": donation.currency,

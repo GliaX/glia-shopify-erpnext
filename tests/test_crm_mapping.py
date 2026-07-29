@@ -72,9 +72,10 @@ def test_donor_to_contact_without_email_or_phone():
 
 
 def test_donation_to_doc_links_contact_and_carries_both_amounts():
-    doc = donation_to_doc(_donation(), contact_name="Probe Donor")
+    doc = donation_to_doc(_donation(), contact_name="Probe Donor", donor_email="anne@example.com")
     assert doc["doctype"] == "Donation"
     assert doc["contact"] == "Probe Donor"
+    assert doc["donor_email"] == "anne@example.com"
     assert doc["amount"] == 54.74
     assert doc["currency"] == "CAD"
     assert doc["amount_presentment"] == 49.21

@@ -75,6 +75,15 @@ def _donation_fields() -> list[dict[str, Any]]:
         },
         {"fieldname": "donor_name", "label": "Donor Label", "fieldtype": "Data", "in_list_view": 1},
         {
+            "fieldname": "donor_email",
+            "label": "Donor Email",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "columns": 2,
+            # denormalized from the linked Contact so the Notification engine can
+            # address thank-you emails directly via "recipient by document field".
+        },
+        {
             "fieldname": "donation_date",
             "label": "Donation Date",
             "fieldtype": "Date",

@@ -62,6 +62,7 @@ def test_write_creates_contact_and_donation(fake_frappe):
     contact = next(d for d in fake_frappe.inserted if d["doctype"] == "Contact")
     donation = next(d for d in fake_frappe.inserted if d["doctype"] == "Donation")
     assert donation["contact"] == contact["name"]
+    assert donation["donor_email"] == "loughryam@yahoo.com"  # denormalized from the donor
 
 
 def test_idempotent_rerun_skips_existing(fake_frappe):
