@@ -51,7 +51,6 @@ query OrdersPage($first: Int!, $after: String, $query: String, $sortKey: OrderSo
             provinceCode
             province
             country
-            country_code
             zip
             phone
             company

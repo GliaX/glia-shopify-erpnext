@@ -40,6 +40,20 @@ class FakeFrappeClient:
         rows = list(self.existing.get(doctype, {}).values())
         return rows[0] if rows else None
 
+    def get_list(
+        self,
+        doctype: str,
+        *,
+        fields: list[str] | None = None,
+        filters: list[Any] | None = None,
+        order_by: str | None = None,
+        page_length: int = 500,
+    ) -> list[dict[str, Any]]:
+        rows = list(self.existing.get(doctype, {}).values())
+        if fields:
+            return [{k: r.get(k) for k in fields} for r in rows]
+        return [{"name": r.get("name")} for r in rows]
+
     def insert(self, doc: dict[str, Any]) -> dict[str, Any]:
         name = self._derive_name(doc)
         saved = {"name": name, **doc}
