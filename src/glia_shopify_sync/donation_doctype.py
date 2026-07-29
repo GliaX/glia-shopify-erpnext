@@ -78,7 +78,7 @@ def _donation_fields() -> list[dict[str, Any]]:
             "fieldname": "donor_email",
             "label": "Donor Email",
             "fieldtype": "Data",
-            "options": "email",  # Frappe email validation + shows in Notification recipient dropdown
+            "options": "Email",  # capital E: Frappe email validation + appears in Notification recipient dropdown
             "in_list_view": 1,
             "columns": 2,
             # denormalized from the linked Contact so the Notification engine can
