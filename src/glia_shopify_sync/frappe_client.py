@@ -150,6 +150,15 @@ class FrappeClient:
         )
         return _data(resp)
 
+    def add_tag(self, tag: str, doctype: str, name: str) -> Any:
+        """Apply a native Frappe tag to a document (frappe.tags.add_tag)."""
+        resp = self._request(
+            "POST",
+            "/api/method/frappe.tags.add_tag",
+            json={"tag": tag, "dt": doctype, "dn": name},
+        )
+        return _data(resp)
+
     def get_list(
         self,
         doctype: str,

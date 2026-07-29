@@ -66,7 +66,7 @@ query OrdersPage($first: Int!, $after: String, $query: String, $sortKey: OrderSo
               id
               name
               quantity
-              product { id title }
+              product { id title tags }
               variant { id title }
               discountedTotalSet {
                 shopMoney { amount currencyCode }

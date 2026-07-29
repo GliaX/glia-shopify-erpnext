@@ -65,6 +65,10 @@ sync:
   # (PAID, PARTIALLY_PAID) are processed. REFUNDED / VOIDED are skipped with a
   # log line (revisit if you want negative entries).
   paid_only: true
+  # Shopify product (campaign) tags to skip when importing tags. These generic
+  # tags apply to nearly every donation and add noise; campaign-specific tags
+  # (Gaza, Glia4Gaza, Palestine, Oakville4Palestine, APIL, ...) come through.
+  tag_skiplist: ["Donate", "Contribute", "Campaigns"]
 
 # Backfill defaults (used by `glia-sync-backfill` when no --since given).
 backfill:

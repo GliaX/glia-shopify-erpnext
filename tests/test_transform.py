@@ -36,6 +36,7 @@ def test_onetime_donation_with_tip_folded(order_onetime_tip, donation_gids, recu
     assert d.shopify_line_item_id == "gid://shopify/LineItem/18115210575971"
     assert d.date == "2026-07-28"
     assert d.financial_status == "PAID"
+    assert d.tags == ("Campaigns", "Donate", "Gaza", "Glia4Gaza", "Palestine")
 
 
 def test_tip_ignored(order_onetime_tip, donation_gids, recurring_gids):

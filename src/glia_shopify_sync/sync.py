@@ -36,6 +36,7 @@ class SyncStats:
     contacts_reused: int = 0
     donations_created: int = 0
     donations_skipped: int = 0
+    tags_applied: int = 0
     errors: list[str] = field(default_factory=list)
     last_processed_at: str | None = None
 
@@ -48,6 +49,7 @@ class SyncStats:
             f"orders={self.orders_seen} ({self.orders_skipped_not_donation} non-donation) | "
             f"contacts: {self.contacts_created} new, {self.contacts_reused} reused | "
             f"donations: {self.donations_created} new, {self.donations_skipped} existing"
+            + (f" | tags: {self.tags_applied} applied" if self.tags_applied else "")
             + (f" | errors={len(self.errors)}" if self.errors else "")
         )
 
@@ -84,12 +86,14 @@ def process_orders(
     dry_run: bool = False,
     contact_map: dict[str, str] | None = None,
     donation_keys: set[str] | None = None,
+    tag_skiplist: set[str] | None = None,
 ) -> SyncStats:
     stats = SyncStats()
     if contact_map is None:
         contact_map = {} if dry_run else load_contact_map(frappe)
     if donation_keys is None:
         donation_keys = set() if dry_run else load_donation_keys(frappe)
+    skip_tags = tag_skiplist or set()
 
     for order in orders:
         stats.orders_seen += 1
@@ -119,7 +123,7 @@ def process_orders(
             continue  # error already recorded
 
         for donation in result.donations:
-            _ensure_donation(
+            created_name = _ensure_donation(
                 frappe,
                 donation,
                 contact_name,
@@ -128,6 +132,8 @@ def process_orders(
                 stats,
                 dry_run,
             )
+            if created_name and donation.tags:
+                _apply_tags(frappe, created_name, donation.tags, skip_tags, stats, dry_run)
 
     return stats
 
@@ -162,21 +168,46 @@ def _ensure_donation(
     keys: set[str],
     stats: SyncStats,
     dry_run: bool,
-) -> None:
+) -> str | None:
+    """Insert a donation if new; return its ERPNext name (None if skipped/failed)."""
     key = f"{donation.shopify_order_id}|{donation.shopify_line_item_id}"
     if key in keys:
         stats.donations_skipped += 1
-        return
+        return None
     try:
         if dry_run:
             stats.donations_created += 1
             keys.add(key)
-            return
-        frappe.insert(donation_to_doc(donation, contact_name=contact_name, donor_email=donor_email))
+            return f"<dry:{donation.shopify_order_name}>"
+        saved = frappe.insert(
+            donation_to_doc(donation, contact_name=contact_name, donor_email=donor_email)
+        )
         keys.add(key)
         stats.donations_created += 1
+        return saved.get("name")
     except Exception as e:  # noqa: BLE001
         stats.errors.append(f"donation {donation.shopify_order_name}: {e}")
+        return None
+
+
+def _apply_tags(
+    frappe: Any,
+    docname: str,
+    tags: tuple[str, ...],
+    skip_tags: set[str],
+    stats: SyncStats,
+    dry_run: bool,
+) -> None:
+    """Apply campaign tags (minus the skip-list) as native ERPNext tags."""
+    for tag in tags:
+        if not tag or tag in skip_tags:
+            continue
+        try:
+            if not dry_run:
+                frappe.add_tag(tag, "Donation", docname)
+            stats.tags_applied += 1
+        except Exception as e:  # noqa: BLE001
+            stats.errors.append(f"tag {tag} on {docname}: {e}")
 
 
 def build_clients(cfg: Any) -> tuple[ShopifyClient, FrappeClient]:
@@ -229,6 +260,7 @@ def run_sync(
         include_test_orders=cfg.yaml.sync.include_test_orders,
         paid_only=cfg.yaml.sync.paid_only,
         dry_run=dry_run,
+        tag_skiplist=set(cfg.yaml.sync.tag_skiplist),
     )
     if not dry_run and stats.last_processed_at:
         state.set_cursor(stats.last_processed_at)

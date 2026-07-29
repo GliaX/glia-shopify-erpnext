@@ -85,6 +85,22 @@ def test_idempotent_rerun_skips_existing(fake_frappe):
     assert fake_frappe.inserted == []  # nothing new written
 
 
+def test_tags_applied_minus_skiplist(fake_frappe):
+    orders = [_order("order_onetime_tip.json")]  # product has 5 tags
+    stats = process_orders(
+        orders,
+        fake_frappe,
+        donation_gids=DONATION_GIDS,
+        recurring_gids=RECURRING_GIDS,
+        tag_skiplist={"Donate", "Contribute", "Campaigns"},
+    )
+    assert stats.donations_created == 1
+    # Gaza, Glia4Gaza, Palestine applied; Donate + Campaigns skipped
+    assert stats.tags_applied == 3
+    applied = {t[0] for t in fake_frappe.tagged}
+    assert applied == {"Gaza", "Glia4Gaza", "Palestine"}
+
+
 def test_last_processed_at_tracked(fake_frappe):
     orders = [_order("order_recurring.json"), _order("order_onetime_tip.json")]
     stats = process_orders(

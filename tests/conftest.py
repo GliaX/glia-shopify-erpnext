@@ -24,6 +24,7 @@ class FakeFrappeClient:
         self.existing: dict[str, dict[str, dict]] = existing or {}
         self.inserted: list[dict] = []
         self.deleted: list[tuple[str, str]] = []
+        self.tagged: list[tuple[str, str, str]] = []
         self._n = 0
 
     def get(self, doctype: str, name: str) -> dict[str, Any]:
@@ -64,6 +65,10 @@ class FakeFrappeClient:
     def delete(self, doctype: str, name: str, *, cancel_first: bool = False) -> None:
         self.deleted.append((doctype, name))
         self.existing.get(doctype, {}).pop(name, None)
+
+    def add_tag(self, tag: str, doctype: str, name: str) -> str:
+        self.tagged.append((tag, doctype, name))
+        return tag
 
     # Frappe names docs by a doctype-specific field; mirror that so idempotency
     # (get-after-insert) behaves like the real system.

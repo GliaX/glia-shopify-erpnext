@@ -118,6 +118,8 @@ class SyncConfig(BaseModel):
     page_size: int = 250
     include_test_orders: bool = False
     paid_only: bool = True
+    # Shopify product tags to NOT import (generic noise). Applied to campaign tags.
+    tag_skiplist: list[str] = ["Donate", "Contribute", "Campaigns"]
 
 
 class BackfillConfig(BaseModel):

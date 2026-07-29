@@ -38,7 +38,7 @@
           "id": "gid://shopify/LineItem/18115210575971",
           "name": "Glia4Gaza - One-Time Gift - $50 One Time Gift",
           "quantity": 1,
-          "product": {"id": "gid://shopify/Product/7967052890211", "title": "Glia4Gaza - One-Time Gift"},
+          "product": {"id": "gid://shopify/Product/7967052890211", "title": "Glia4Gaza - One-Time Gift", "tags": ["Campaigns", "Donate", "Gaza", "Glia4Gaza", "Palestine"]},
           "variant": {"id": "gid://shopify/ProductVariant/44015817031779", "title": "$50 One Time Gift"},
           "discountedTotalSet": {
             "shopMoney": {"amount": "50.00", "currencyCode": "CAD"},

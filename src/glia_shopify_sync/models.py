@@ -62,6 +62,9 @@ class Donation:
     tier: str | None = None
     includes_tip: bool = False
     financial_status: str = ""
+    # Campaign tags from the Shopify product (e.g. "Gaza", "Glia4Gaza"). Applied
+    # to the ERPNext doc as native tags (minus a configurable skip-list).
+    tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
