@@ -1,0 +1,5 @@
+{
+  "access_token": "shpat_synthetic_test_token",
+  "scope": "read_orders,read_all_orders,read_products,read_customers",
+  "expires_in": 86399
+}

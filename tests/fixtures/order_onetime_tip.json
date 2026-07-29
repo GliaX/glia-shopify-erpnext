@@ -1,0 +1,64 @@
+{
+  "id": "gid://shopify/Order/6984546943075",
+  "name": "#6074",
+  "processedAt": "2026-07-28T17:18:22Z",
+  "createdAt": "2026-07-28T17:18:20Z",
+  "displayFinancialStatus": "PAID",
+  "test": false,
+  "email": "loughryam@yahoo.com",
+  "currencyCode": "CAD",
+  "presentmentCurrencyCode": "EUR",
+  "customer": {
+    "id": "gid://shopify/Customer/9308425224291",
+    "firstName": "Anne",
+    "lastName": "L Walsh",
+    "email": "loughryam@yahoo.com",
+    "phone": null,
+    "defaultAddress": {
+      "address1": "1906 Garden Street",
+      "address2": null,
+      "city": "Austin",
+      "provinceCode": "TX",
+      "province": "Texas",
+      "country": "United States",
+      "country_code": "US",
+      "zip": "78702",
+      "phone": "+18177987638",
+      "company": null
+    }
+  },
+  "totalPriceSet": {
+    "shopMoney": {"amount": "54.74", "currencyCode": "CAD"},
+    "presentmentMoney": {"amount": "49.21", "currencyCode": "EUR"}
+  },
+  "lineItems": {
+    "edges": [
+      {
+        "node": {
+          "id": "gid://shopify/LineItem/18115210575971",
+          "name": "Glia4Gaza - One-Time Gift - $50 One Time Gift",
+          "quantity": 1,
+          "product": {"id": "gid://shopify/Product/7967052890211", "title": "Glia4Gaza - One-Time Gift"},
+          "variant": {"id": "gid://shopify/ProductVariant/44015817031779", "title": "$50 One Time Gift"},
+          "discountedTotalSet": {
+            "shopMoney": {"amount": "50.00", "currencyCode": "CAD"},
+            "presentmentMoney": {"amount": "44.95", "currencyCode": "EUR"}
+          }
+        }
+      },
+      {
+        "node": {
+          "id": "gid://shopify/LineItem/18115210608739",
+          "name": "Tip",
+          "quantity": 1,
+          "product": null,
+          "variant": null,
+          "discountedTotalSet": {
+            "shopMoney": {"amount": "4.74", "currencyCode": "CAD"},
+            "presentmentMoney": {"amount": "4.26", "currencyCode": "EUR"}
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "gid://shopify/Order/6900000000001",
+  "name": "#5001",
+  "processedAt": "2026-05-01T10:00:00Z",
+  "createdAt": "2026-05-01T10:00:00Z",
+  "displayFinancialStatus": "PAID",
+  "test": false,
+  "email": "shopper@example.com",
+  "currencyCode": "CAD",
+  "presentmentCurrencyCode": "CAD",
+  "customer": {
+    "id": "gid://shopify/Customer/9000000000001",
+    "firstName": "Pat",
+    "lastName": "Buyer",
+    "email": "shopper@example.com",
+    "phone": null,
+    "defaultAddress": null
+  },
+  "totalPriceSet": {
+    "shopMoney": {"amount": "30.00", "currencyCode": "CAD"},
+    "presentmentMoney": {"amount": "30.00", "currencyCode": "CAD"}
+  },
+  "lineItems": {
+    "edges": [
+      {
+        "node": {
+          "id": "gid://shopify/LineItem/18000000000001",
+          "name": "Glia T-shirt (Unisex) - M",
+          "quantity": 1,
+          "product": {"id": "gid://shopify/Product/6575321776227", "title": "Glia T-shirt (Unisex)"},
+          "variant": {"id": "gid://shopify/ProductVariant/43000000000001", "title": "M"},
+          "discountedTotalSet": {
+            "shopMoney": {"amount": "30.00", "currencyCode": "CAD"},
+            "presentmentMoney": {"amount": "30.00", "currencyCode": "CAD"}
+          }
+        }
+      }
+    ]
+  }
+}

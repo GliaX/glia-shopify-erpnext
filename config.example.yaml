@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# Main configuration. Copy to ./config.yaml (dev) or /etc/glia-sync/config.yaml
+# (prod) and edit. Path is set via GLIA_SYNC_CONFIG env var (defaults below).
+# ---------------------------------------------------------------------------
+
+# ERPNext company name (must already exist) and its default accounting currency.
+# Used as the "shop money" currency for Donation.amount. Donors may pay in other
+# presentment currencies; those are preserved in separate fields.
+company: "Glia"
+default_currency: CAD
+
+# Curated allow-list of Shopify product IDs that count as DONATIONS.
+# Everything else in the store (merch, services, devices, education, gift cards)
+# is ignored. Seeded from the live glia2 catalog on 2026-07-28; review/trim as
+# needed. When you add a new campaign product, append its numeric ID here.
+donation_product_ids:
+  - "7962927005795"  # One Time Donation (generic)
+  - "7962927038563"  # Monthly Donation (generic, recurring)
+  - "7967052890211"  # Glia4Gaza - One-Time Gift
+  - "7970874916963"  # Glia4Gaza - Monthly Gift (recurring)
+  - "7970874884195"  # From Her Hands - One-Time Gift
+  - "7967053742179"  # From Her Hands - Monthly Gift
+  - "6865626169443"  # Donate to the Glia Project
+  - "6969769754723"  # Donate to Save a Life In Gaza & the West Bank
+  - "7096013226083"  # Donate to Help Repair Gaza
+  - "6868033962083"  # Contribute to APIL
+  - "6981732991075"  # Molded for Mercy
+  - "7594391961699"  # Love Songs for Gaza, Chicago
+  - "8016908225635"  # Dhul Hijjah Daily Giving
+  - "7731735691363"  # Gaza Emergency Water Relief
+  - "7196954394723"  # Gaza Medical Support Initiative
+  - "7962744291427"  # Dr. Nehal Al Tarhuni's Iftar
+  - "8016274030691"  # Oakville4Palestine Optional Donation to Glia
+  # Explicitly NOT donations (confirmed 2026-07-28) — leave excluded:
+  # - "6986133635171"  # Mobilizing Innovation (paid course)
+  # - "8016272523363"  # Oakville4Palestine Community Fundraiser Admission (ticket)
+  # - "6898915410019"  # Glia Gift Card
+
+# Subset of the above whose orders should be tagged donation_type=Recurring.
+# These are the Shopify-Subscriptions (selling-plan) monthly products.
+recurring_product_ids:
+  - "7962927038563"  # Monthly Donation
+  - "7970874916963"  # Glia4Gaza - Monthly Gift
+  - "7967053742179"  # From Her Hands - Monthly Gift
+
+# Tip handling. Some orders include a "Tip" line item (product == null) folded
+# into the order total. "fold" adds it to the first donation line on the order
+# and marks that Donation with includes_tip=true. "ignore" drops it. "separate"
+# emits a second Donation (campaign="Tip") — not yet implemented.
+tip_mode: fold  # fold | ignore | separate
+
+# Pipeline directories. Use absolute paths in production.
+paths:
+  state: "./state.json"
+  archive: "./archive"
+  errors: "./errors"
+
+# Sync behaviour.
+sync:
+  # GraphQL page size for the orders query. 250 is Shopify's max.
+  page_size: 250
+  # Exclude Shopify "test" orders.
+  include_test_orders: false
+  # If false, only orders whose displayFinancialStatus indicates collected funds
+  # (PAID, PARTIALLY_PAID) are processed. REFUNDED / VOIDED are skipped with a
+  # log line (revisit if you want negative entries).
+  paid_only: true
+
+# Backfill defaults (used by `glia-sync-backfill` when no --since given).
+backfill:
+  # Earliest date to pull (Shopify store creation era). Format YYYY-MM-DD.
+  since: "2020-01-01"
+
+# Network retries for ERPNext 5xx / transient Shopify errors.
+retry:
+  max_attempts: 3
+  initial_wait_seconds: 5
+  max_wait_seconds: 120
+  backoff_multiplier: 2.0
+
+# Logging
+logging:
+  level: INFO  # DEBUG | INFO | WARNING | ERROR
+  json_logs: false  # true = structured JSON for production log aggregation

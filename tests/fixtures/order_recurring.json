@@ -1,0 +1,51 @@
+{
+  "id": "gid://shopify/Order/6984559493219",
+  "name": "#6052",
+  "processedAt": "2026-07-28T14:08:51Z",
+  "createdAt": "2026-07-28T14:08:50Z",
+  "displayFinancialStatus": "PAID",
+  "test": false,
+  "email": "mikeocontact@gmail.com",
+  "currencyCode": "CAD",
+  "presentmentCurrencyCode": "USD",
+  "customer": {
+    "id": "gid://shopify/Customer/9308350000001",
+    "firstName": "Mike",
+    "lastName": "O",
+    "email": "mikeocontact@gmail.com",
+    "phone": null,
+    "defaultAddress": {
+      "address1": "500 Example Rd",
+      "address2": null,
+      "city": "Toronto",
+      "provinceCode": "ON",
+      "province": "Ontario",
+      "country": "Canada",
+      "country_code": "CA",
+      "zip": "M5V 1A1",
+      "phone": "+14165551234",
+      "company": null
+    }
+  },
+  "totalPriceSet": {
+    "shopMoney": {"amount": "25.00", "currencyCode": "CAD"},
+    "presentmentMoney": {"amount": "19.00", "currencyCode": "USD"}
+  },
+  "lineItems": {
+    "edges": [
+      {
+        "node": {
+          "id": "gid://shopify/LineItem/18114988000001",
+          "name": "Glia4Gaza - Monthly Gift - $25: Recurring - Sustain Operation in Gaza",
+          "quantity": 1,
+          "product": {"id": "gid://shopify/Product/7970874916963", "title": "Glia4Gaza - Monthly Gift"},
+          "variant": {"id": "gid://shopify/ProductVariant/44016000000001", "title": "$25: Recurring"},
+          "discountedTotalSet": {
+            "shopMoney": {"amount": "25.00", "currencyCode": "CAD"},
+            "presentmentMoney": {"amount": "19.00", "currencyCode": "USD"}
+          }
+        }
+      }
+    ]
+  }
+}
