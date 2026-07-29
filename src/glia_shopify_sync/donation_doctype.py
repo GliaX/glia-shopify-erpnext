@@ -124,7 +124,9 @@ def _donation_fields() -> list[dict[str, Any]]:
             "label": "Shopify Order ID",
             "fieldtype": "Data",
             "reqd": 1,
-            "unique": 1,
+            # NOT unique: an order can contain several donation line items, so
+            # multiple Donation rows legitimately share an order ID. Dedup is on
+            # the composite order|line_item (handled by the sync's dedup map).
             "set_only_once": 1,
         },
         {"fieldname": "shopify_order_name", "label": "Shopify Order #", "fieldtype": "Data"},

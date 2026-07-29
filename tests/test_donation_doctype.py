@@ -40,7 +40,7 @@ def test_required_and_unique_fields():
     by_field = {f["fieldname"]: f for f in donation_doctype_def()["fields"]}
     for reqd in ("contact", "donation_date", "amount", "shopify_order_id", "shopify_line_item_id"):
         assert by_field[reqd]["reqd"] == 1, reqd
-    assert by_field["shopify_order_id"]["unique"] == 1
+    assert not by_field["shopify_order_id"].get("unique")  # order can have several donation lines
     assert by_field["contact"]["fieldtype"] == "Link"
     assert by_field["contact"]["options"] == "Contact"
     assert by_field["amount"]["fieldtype"] == "Currency"

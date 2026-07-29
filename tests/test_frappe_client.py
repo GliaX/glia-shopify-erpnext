@@ -146,17 +146,13 @@ def test_find_returns_first_or_none():
     assert c2.find("CRM Contact", [["email", "=", "none@x.com"]]) is None
 
 
-def test_get_list_auto_paginates():
-    # Page 1 returns a full page (2 rows); page 2 returns 1 row then stops.
-    plan = {
-        0: [{"name": "a"}, {"name": "b"}],
-        2: [{"name": "c"}],
-        4: [],
-    }
+def test_get_list_single_fetch_passes_fields_and_filters():
+    # Frappe's REST ignores limit_page_start, so get_list does one large fetch.
+    seen = {}
 
     def transport(method, url, *, headers, params, json, timeout):
-        start = (params or {}).get("limit_page_start", 0)
-        return _resp(200, {"data": plan[start]})
+        seen["params"] = params
+        return _resp(200, {"data": [{"name": "a"}, {"name": "b"}]})
 
     c = FrappeClient(
         base_url="https://x.example",
@@ -164,5 +160,8 @@ def test_get_list_auto_paginates():
         api_secret="s",
         transport=transport,
     )
-    rows = c.get_list("Donation", page_length=2)
-    assert [r["name"] for r in rows] == ["a", "b", "c"]
+    rows = c.get_list("Donation", fields=["name", "amount"], filters=[["Donation", "x", "=", 1]])
+    assert [r["name"] for r in rows] == ["a", "b"]
+    # always starts at offset 0 (offset pagination isn't supported by the endpoint)
+    assert seen["params"]["limit_page_start"] == 0
+    assert "name" in seen["params"]["fields"]

@@ -144,27 +144,23 @@ class FrappeClient:
         fields: list[str] | None = None,
         filters: list[Any] | None = None,
         order_by: str | None = None,
-        page_length: int = 500,
+        page_length: int = 100_000,
     ) -> list[dict[str, Any]]:
-        """Fetch ALL matching rows, auto-paginating. Use sparingly on big tables."""
-        rows: list[dict[str, Any]] = []
-        start = 0
-        while True:
-            page = self._get_list_page(
-                doctype,
-                fields=fields,
-                filters=filters,
-                order_by=order_by,
-                page_length=page_length,
-                page_start=start,
-            )
-            if not page:
-                break
-            rows.extend(page)
-            if len(page) < page_length:
-                break
-            start += page_length
-        return rows
+        """Fetch matching rows.
+
+        NOTE: Frappe's REST endpoints do NOT honor `limit_page_start` (offset) in
+        this version, so we fetch in a single large page rather than paginating.
+        Fine for the few-thousand-row dedup loads here; switch to cursor-based
+        pagination (filter on `name > last`) if sets grow much larger.
+        """
+        return self._get_list_page(
+            doctype,
+            fields=fields,
+            filters=filters,
+            order_by=order_by,
+            page_length=page_length,
+            page_start=0,
+        )
 
     def find(
         self,
