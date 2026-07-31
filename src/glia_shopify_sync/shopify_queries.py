@@ -35,6 +35,7 @@ query OrdersPage($first: Int!, $after: String, $query: String, $sortKey: OrderSo
         createdAt
         displayFinancialStatus
         test
+        tags
         email
         currencyCode
         presentmentCurrencyCode

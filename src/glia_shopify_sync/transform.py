@@ -74,6 +74,7 @@ def transform_order(
 
     donor = _build_donor(order)
     tip_used = False
+    order_tags = order.get("tags") or []
 
     donations: list[Donation] = []
     for li in donation_lines:
@@ -89,7 +90,9 @@ def transform_order(
 
         product = li.get("product") or {}
         product_title = product.get("title") or ""
-        product_tags = tuple(product.get("tags") or [])
+        # combine product tags + order-level tags (deduplicated)
+        product_tags = list(product.get("tags") or [])
+        combined_tags = tuple(dict.fromkeys(product_tags + list(order_tags)))
         variant = li.get("variant") or {}
         donation_type = _classify_type(_line_product_gid(li), li.get("name", ""), recurring_gids)
 
@@ -109,7 +112,7 @@ def transform_order(
                 tier=variant.get("title"),
                 includes_tip=includes_tip,
                 financial_status=order.get("displayFinancialStatus") or "",
-                tags=product_tags,
+                tags=combined_tags,
             )
         )
 
