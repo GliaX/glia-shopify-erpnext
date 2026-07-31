@@ -112,6 +112,31 @@ class PatreonClient:
         resp = self._get("/api/oauth2/v2/campaigns", {"fields[campaign]": "creation_name"})
         return resp["data"][0]["id"]
 
+    def fetch_user_emails(self, campaign_id: str) -> dict[str, str]:
+        """Fetch {user_id: email} via the v1 pledges endpoint.
+
+        The v2 members endpoint does NOT return member emails (a known API
+        limitation), but the v1 pledges endpoint does. We use v1 for emails
+        and v2 for detailed member data (amounts, charge status, lifetime).
+        """
+        emails: dict[str, str] = {}
+        url: str | None = (
+            f"{PATREON_BASE}/api/oauth2/api/campaigns/{campaign_id}/pledges?page[count]=200"
+        )
+        while url:
+            resp = self._transport("GET", url, headers=self._headers())
+            if resp.get("errors"):
+                log.warning("patreon_v1_error", errors=resp["errors"][:2])
+                break
+            for i in resp.get("included", []):
+                if i.get("type") == "user":
+                    email = (i.get("attributes") or {}).get("email")
+                    if email:
+                        emails[i["id"]] = email
+            url = (resp.get("links") or {}).get("next")
+        log.info("patreon_emails_fetched", count=len(emails))
+        return emails
+
     def iter_members(self, campaign_id: str) -> Iterator[dict[str, Any]]:
         """Yield enriched member dicts (with _user + _tiers merged in) via cursor pagination."""
         cursor: str | None = None

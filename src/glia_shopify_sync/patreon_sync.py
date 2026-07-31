@@ -37,6 +37,8 @@ def sync_patreon(
     stats = SyncStats()
     contact_map = {} if dry_run else load_contact_map(frappe)
     donation_keys = set() if dry_run else load_donation_keys(frappe)
+    # v2 members don't include emails; fetch them from the v1 pledges endpoint.
+    user_emails = {} if dry_run else patreon.fetch_user_emails(campaign_id)
 
     for member in patreon.iter_members(campaign_id):
         stats.orders_seen += 1
@@ -44,6 +46,11 @@ def sync_patreon(
         if a.get("patron_status") in (None, ""):
             stats.orders_skipped_not_donation += 1
             continue
+
+        # enrich: merge v1 email into _user (v2 doesn't return member emails)
+        uid = (member.get("relationships", {}).get("user", {}).get("data") or {}).get("id", "")
+        if uid and uid in user_emails:
+            member["_user"]["email"] = user_emails[uid]
 
         # --- ensure Contact ---
         donor = member_to_donor(member)
