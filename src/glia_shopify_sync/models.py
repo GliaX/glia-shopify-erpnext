@@ -62,6 +62,8 @@ class Donation:
     tier: str | None = None
     includes_tip: bool = False
     financial_status: str = ""
+    # "Shopify" | "Patreon" — the platform this donation originated from.
+    source: str = "Shopify"
     # Campaign tags from the Shopify product (e.g. "Gaza", "Glia4Gaza"). Applied
     # to the ERPNext doc as native tags (minus a configurable skip-list).
     tags: tuple[str, ...] = ()

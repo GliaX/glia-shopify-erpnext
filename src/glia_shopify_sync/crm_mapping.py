@@ -48,6 +48,7 @@ def donation_to_doc(
         "doctype": "Donation",
         "contact": contact_name,
         "donor_name": _donor_label(donation),
+        "source": donation.source,
         "donor_email": donor_email,
         "donation_date": donation.date,
         "amount": _to_float(donation.amount),

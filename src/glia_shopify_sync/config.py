@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     erpnext_api_key: str = ""
     erpnext_api_secret: SecretStr = SecretStr("")
 
+    # Patreon API v2 (Creator's Access Token).
+    patreon_creator_access_token: str = ""
+    patreon_creator_refresh_token: str = ""
+    patreon_client_id: str = ""
+    patreon_client_secret: SecretStr = SecretStr("")
+    patreon_campaign_id: str = ""  # auto-fetched via /campaigns if empty
+
     @classmethod
     def settings_customise_sources(
         cls,

@@ -10,6 +10,7 @@ from glia_shopify_sync.donation_doctype import (
 
 FIELD_NAMES = {
     "contact",
+    "source",
     "donor_name",
     "donor_email",
     "donation_date",

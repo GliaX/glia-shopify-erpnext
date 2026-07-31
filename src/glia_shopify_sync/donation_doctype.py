@@ -73,6 +73,15 @@ def _donation_fields() -> list[dict[str, Any]]:
             "reqd": 1,
             "in_list_view": 1,
         },
+        {
+            "fieldname": "source",
+            "label": "Source",
+            "fieldtype": "Select",
+            "options": "\nShopify\nPatreon",
+            "default": "Shopify",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+        },
         {"fieldname": "donor_name", "label": "Donor Label", "fieldtype": "Data", "in_list_view": 1},
         {
             "fieldname": "donor_email",
