@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     patreon_client_secret: SecretStr = SecretStr("")
     patreon_campaign_id: str = ""  # auto-fetched via /campaigns if empty
 
+    # Stripe (Phase 5 checkout). Values in .env (gitignored). Leave blank to skip
+    # the Stripe Settings / Payment Gateway Account step (re-run after adding).
+    stripe_publishable_key: str = ""
+    stripe_secret_key: SecretStr = SecretStr("")
+    stripe_webhook_secret: str = ""
+
     @classmethod
     def settings_customise_sources(
         cls,
@@ -145,6 +151,42 @@ class LoggingConfig(BaseModel):
     json_logs: bool = False
 
 
+class ShopConfig(BaseModel):
+    """Shop-migration settings (Phase 1+ of the Shopify -> ERPNext E Commerce move).
+
+    These are non-secret knobs consumed by the `glia_shopify_sync.shop` package.
+    """
+
+    # ERPNext Price List that holds the storefront selling prices (currency below).
+    price_list: str = "Standard Selling"
+    currency: str = "CAD"
+    # The root Item Group to create new groups under (ERPNext default root).
+    item_group_parent: str = "All Item Groups"
+    # Item Group used when a product has no recognizable Shopify productType.
+    item_group_default: str = "Products"
+    # Item Group for donation products (they are also flagged shopify_is_donation).
+    item_group_donations: str = "Donation"
+    # Map a Shopify productType (free text) -> an ERPNext Item Group name. Any
+    # value referenced here is created idempotently by `glia-shop-setup`.
+    item_group_map: dict[str, str] = Field(default_factory=dict)
+    # Publish Website Items to the storefront. Set false to do a catalog-only import.
+    publish_website_items: bool = True
+    # Pull ARCHIVED/DRAFT Shopify products too (they are imported with disabled=1).
+    include_archived: bool = False
+    # Phase 3 (customers): default Customer Group + Territory for migrated customers.
+    customer_group: str = "Individual"
+    customer_territory: str = "All Territories"
+    # Phase 4 (orders): Customer used for guest Shopify orders (no customer account).
+    guest_customer: str = "Shopify Guest"
+    # ERPNext warehouse for Sales Order line items. The company default
+    # (`Stores - Glia`) is disabled, so set a real one (shop merch is POD-fulfilled,
+    # so the warehouse is nominal; Finished Goods - Canada is the nearest fit).
+    warehouse: str = "Finished Goods - Canada - Glia"
+    # Phase 5 (checkout): ERPNext Bank Account (of type Bank, CAD) where Stripe
+    # settlements land. Must already exist in the Glia chart of accounts.
+    payment_account: str = "03-743-20 - Canadian Chequing Account - Glia"
+
+
 class YamlConfig(BaseModel):
     """Non-secret configuration loaded from config.yaml."""
 
@@ -158,6 +200,7 @@ class YamlConfig(BaseModel):
     backfill: BackfillConfig = Field(default_factory=BackfillConfig)
     retry: RetryConfig = Field(default_factory=RetryConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    shop: ShopConfig = Field(default_factory=ShopConfig)
 
 
 class AppConfig:

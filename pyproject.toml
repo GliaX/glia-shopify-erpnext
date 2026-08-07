@@ -47,6 +47,13 @@ glia-sync-backfill = "glia_shopify_sync.backfill:main"
 glia-sync-daily = "glia_shopify_sync.daily_run:main"
 glia-sync-patreon = "glia_shopify_sync.patreon_sync:main"
 
+# Shop migration (Phase 1): Shopify store -> ERPNext E Commerce.
+glia-shop-setup = "glia_shopify_sync.shop.setup:main"
+glia-shop-catalog-sync = "glia_shopify_sync.shop.catalog_sync:main"
+glia-shop-customer-sync = "glia_shopify_sync.shop.customer_sync:main"
+glia-shop-checkout-setup = "glia_shopify_sync.shop.checkout_setup:main"
+glia-shop-order-sync = "glia_shopify_sync.shop.order_sync:main"
+
 [project.urls]
 Homepage = "https://github.com/glia/glia-shopify-erpnext"
 

@@ -86,3 +86,29 @@ retry:
 logging:
   level: INFO  # DEBUG | INFO | WARNING | ERROR
   json_logs: false  # true = structured JSON for production log aggregation
+
+# ---------------------------------------------------------------------------
+# Shop migration (Phase 1+): Shopify store -> ERPNext E Commerce.
+# Consumed by the `glia_shopify_sync.shop` package (glia-shop-setup /
+# glia-shop-catalog-sync). See shop/__init__.py for the architecture.
+# ---------------------------------------------------------------------------
+shop:
+  price_list: "Standard Selling"
+  currency: CAD
+  item_group_parent: "All Item Groups"
+  item_group_default: "Products"
+  item_group_donations: "Donation"
+  item_group_map:
+    "Merch": "Merch"
+    "Apparel": "Merch"
+    "T-Shirt": "Merch"
+    "Devices": "Devices"
+    "Services": "Services"
+    "Education": "Education"
+    "Gift Cards": "Gift Cards"
+  publish_website_items: true
+  include_archived: false
+  customer_group: "Individual"
+  customer_territory: "All Territories"
+  guest_customer: "Shopify Guest"
+  warehouse: "Finished Goods - Canada - Glia"
