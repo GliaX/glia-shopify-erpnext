@@ -17,7 +17,13 @@ from typing import Any
 
 import structlog
 
-from .shopify_queries import ORDERS_QUERY, TOKEN_ENDPOINT_TEMPLATE
+from .shopify_queries import (
+    COLLECTIONS_QUERY,
+    CUSTOMERS_QUERY,
+    ORDERS_QUERY,
+    PRODUCTS_QUERY,
+    TOKEN_ENDPOINT_TEMPLATE,
+)
 
 log = structlog.get_logger()
 
@@ -190,6 +196,10 @@ class ShopifyClient:
 
         `since` (YYYY-MM-DD) restricts to orders processed on/after that date.
         `max_pages` caps pagination (useful for tests / dry-run sampling).
+
+        NOTE: paid-status filtering is done client-side (Shopify's GraphQL
+        `financial_status` query filter is unreliable); the donation sync uses
+        the same approach.
         """
         cursor: str | None = None
         pages = 0
@@ -221,6 +231,95 @@ class ShopifyClient:
     def _run_query(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         token = self.token_manager.get_token()
         return self._transport(self.shop_domain, self.api_version, token, query, variables)
+
+    def iter_products(
+        self,
+        *,
+        include_archived: bool = False,
+        max_pages: int | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Yield Product nodes, cursor-paginated.
+
+        By default only ACTIVE products are returned (Shopify `status:ACTIVE`
+        query filter). Set `include_archived=True` to also pull ARCHIVED/DRAFT
+        (they'll still be marked `disabled=1` downstream).
+        """
+        base: dict[str, Any] = {"sortKey": "TITLE", "reverse": False}
+        if not include_archived:
+            base["query"] = "status:ACTIVE"
+        yield from self._iter_connection(
+            PRODUCTS_QUERY,
+            connection_key="products",
+            base_variables=base,
+            max_pages=max_pages,
+        )
+
+    def iter_collections(self, *, max_pages: int | None = None) -> Iterator[dict[str, Any]]:
+        """Yield Collection nodes (manual + smart), cursor-paginated."""
+        yield from self._iter_connection(
+            COLLECTIONS_QUERY,
+            connection_key="collections",
+            base_variables={"sortKey": "TITLE", "reverse": False},
+            max_pages=max_pages,
+        )
+
+    def iter_customers(
+        self,
+        *,
+        only_with_orders: bool = False,
+        max_pages: int | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Yield Customer nodes, cursor-paginated.
+
+        Set `only_with_orders=True` to restrict to customers with at least one
+        order (Shopify `orders_count:>0` query filter) — the useful subset for
+        order-history backfill, skipping zero-order newsletter/discarded accounts.
+        """
+        base: dict[str, Any] = {"sortKey": "CREATED_AT", "reverse": False}
+        if only_with_orders:
+            base["query"] = "orders_count:>0"
+        yield from self._iter_connection(
+            CUSTOMERS_QUERY,
+            connection_key="customers",
+            base_variables=base,
+            max_pages=max_pages,
+        )
+
+    def _iter_connection(
+        self,
+        query: str,
+        *,
+        connection_key: str,
+        base_variables: dict[str, Any] | None = None,
+        max_pages: int | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        """Generic Relay cursor paginator used by iter_products/iter_collections.
+
+        `connection_key` is the field under `data` holding the connection
+        (e.g. "products"). `base_variables` carries sort/query knobs; `first`
+        and `after` are merged in on each page.
+        """
+        cursor: str | None = None
+        pages = 0
+        base = dict(base_variables or {})
+        while True:
+            variables = {**base, "first": self.page_size, "after": cursor}
+            resp = self._run_query(query, variables)
+            conn = resp["data"][connection_key]
+            for edge in conn.get("edges", []):
+                yield edge["node"]
+
+            page_info = conn.get("pageInfo", {})
+            pages += 1
+            self._maybe_throttle(resp)
+
+            if not page_info.get("hasNextPage"):
+                break
+            if max_pages is not None and pages >= max_pages:
+                break
+            cursor = page_info.get("endCursor")
+            if not cursor:
+                break
 
     def _maybe_throttle(self, resp: dict[str, Any]) -> None:
         """Respect Shopify's GraphQL cost throttling.
