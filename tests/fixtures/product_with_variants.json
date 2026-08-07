@@ -1,0 +1,65 @@
+{
+  "id": "gid://shopify/Product/6575321776227",
+  "title": "Glia T-shirt (Unisex)",
+  "handle": "glia-t-shirt-unisex",
+  "descriptionHtml": "<p>Soft organic cotton tee.</p>",
+  "vendor": "Glia",
+  "productType": "Apparel",
+  "tags": ["Merch", "Glia"],
+  "status": "ACTIVE",
+  "options": [{"name": "Size"}, {"name": "Color"}],
+  "variants": {
+    "edges": [
+      {
+        "node": {
+          "id": "gid://shopify/ProductVariant/43000000000001",
+          "sku": "TEE-M-BLK",
+          "title": "M / Black",
+          "price": "30.00",
+          "compareAtPrice": null,
+          "barcode": "0123456789012",
+          "inventoryItem": {"measurement": {"weight": {"value": 200.0, "unit": "GRAMS"}}},
+          "availableForSale": true,
+          "selectedOptions": [
+            {"name": "Size", "value": "M"},
+            {"name": "Color", "value": "Black"}
+          ]
+        }
+      },
+      {
+        "node": {
+          "id": "gid://shopify/ProductVariant/43000000000002",
+          "sku": "TEE-L-BLK",
+          "title": "L / Black",
+          "price": "30.00",
+          "compareAtPrice": "35.00",
+          "barcode": null,
+          "inventoryItem": {"measurement": {"weight": {"value": 210.0, "unit": "GRAMS"}}},
+          "availableForSale": true,
+          "selectedOptions": [
+            {"name": "Size", "value": "L"},
+            {"name": "Color", "value": "Black"}
+          ]
+        }
+      }
+    ]
+  },
+  "images": {
+    "edges": [
+      {
+        "node": {
+          "url": "https://cdn.shopify.com/s/files/1/0000/0001/products/tee.jpg",
+          "altText": "Glia tee front",
+          "width": 1000,
+          "height": 1000
+        }
+      }
+    ]
+  },
+  "collections": {
+    "edges": [
+      {"node": {"title": "Merch", "handle": "merch"}}
+    ]
+  },
+  "sellingPlanGroupCount": 0
+}

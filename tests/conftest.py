@@ -13,6 +13,32 @@ from glia_shopify_sync.frappe_client import FrappeError
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+def _row_matches(row: dict[str, Any], filters: list[Any] | None) -> bool:
+    """Apply Frappe-style `[doctype, field, op, value]` (or 3-tuple) equality
+    filters. Unknown operators are treated as a match (conservative)."""
+    for f in filters or []:
+        if not f:
+            continue
+        if len(f) == 4:
+            _, field, op, value = f
+        elif len(f) == 3:
+            field, op, value = f
+        else:
+            continue
+        cell = row.get(field)
+        if op in ("=", "==") and cell != value:
+            return False
+        if op == "!=" and cell == value:
+            return False
+        if op == "is" and value == "set" and (cell is None or cell == ""):
+            return False
+        if op == "is" and value == "not set" and cell not in (None, ""):
+            return False
+        if op == "in" and cell not in (value or ()):
+            return False
+    return True
+
+
 class FakeFrappeClient:
     """In-memory stand-in for FrappeClient used by setup/doctor/send-test tests.
 
@@ -38,8 +64,12 @@ class FakeFrappeClient:
     def find(
         self, doctype: str, filters: list[Any], *, fields: list[str] | None = None
     ) -> dict[str, Any] | None:
-        rows = list(self.existing.get(doctype, {}).values())
-        return rows[0] if rows else None
+        rows = [r for r in self.existing.get(doctype, {}).values() if _row_matches(r, filters)]
+        if not rows:
+            return None
+        if fields:
+            return {k: rows[0].get(k) for k in fields}
+        return rows[0]
 
     def get_list(
         self,
@@ -62,6 +92,15 @@ class FakeFrappeClient:
         self.existing.setdefault(doc.get("doctype", ""), {})[name] = saved
         return saved
 
+    def update(self, doctype: str, name: str, values: dict[str, Any]) -> dict[str, Any]:
+        doc = self.existing.setdefault(doctype, {}).get(name)
+        if doc is None:
+            saved = {"name": name, "doctype": doctype, **values}
+            self.existing[doctype][name] = saved
+            return saved
+        doc.update(values)
+        return doc
+
     def delete(self, doctype: str, name: str, *, cancel_first: bool = False) -> None:
         self.deleted.append((doctype, name))
         self.existing.get(doctype, {}).pop(name, None)
@@ -77,6 +116,12 @@ class FakeFrappeClient:
         "Customer Group": "customer_group_name",
         "Customer": "customer_name",
         "DocType": "name",
+        "Price List": "price_list_name",
+        "Item Group": "item_group_name",
+        "Item Attribute": "attribute_name",
+        "Item": "item_code",
+        "Website Item": "item_code",
+        "Territory": "territory_name",
     }
 
     def _derive_name(self, doc: dict[str, Any]) -> str:
@@ -135,3 +180,21 @@ def order_merch_only() -> dict:
 @pytest.fixture
 def token_response() -> dict:
     return load_fixture("token_response.json")
+
+
+# --- Shop migration fixtures ---------------------------------------------
+
+
+@pytest.fixture
+def product_with_variants() -> dict:
+    return load_fixture("product_with_variants.json")
+
+
+@pytest.fixture
+def product_simple() -> dict:
+    return load_fixture("product_simple.json")
+
+
+@pytest.fixture
+def donation_product_gids() -> set[str]:
+    return {"gid://shopify/Product/7962927005795"}
