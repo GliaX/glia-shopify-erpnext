@@ -357,9 +357,139 @@ kubectl -n erpnext exec deploy/erpnext-gunicorn -- bash -lc \
 ```bash
 cd /home/orangey/workspace/glia-shopify-erpnext
 . .venv/bin/activate
-pytest -q                    # 62 tests
+pytest -q                    # 99 tests (donation sync + shop migration)
 ruff check src tests         # lint
 mypy                         # type check
 glia-sync-doctor             # health check (reads .env)
 glia-sync-backfill --dry-run --limit 10  # preview
 ```
+
+---
+
+## 12. Shop Migration (Shopify → ERPNext E Commerce)
+
+Recreating the Shopify storefront on ERPNext's E Commerce module. The migration
+CLIs live in `src/glia_shopify_sync/shop/`; architecture & phase tracker are in
+`AGENTS.md` ("Shop migration"). This section is the **ops runbook**.
+
+### 12.1 What's installed (custom image)
+`asset.glia.org` originally shipped with E Commerce stripped out. The custom
+image (`GliaX/helm-erpnext` Dockerfile, tag `v16.30.0-crm-v1.80.0-ecommerce2`)
+bundles three apps on top of `frappe/erpnext:v16.30.0`:
+- **`frappe/payments`** (version-16) — payment plumbing; webshop depends on it.
+- **`frappe/webshop`** (version-16) — E Commerce app (`Website Item`,
+  `Webshop Settings`, Shopping Cart).
+- **Frappe CRM** (the Glia fork) — unchanged.
+
+Apps are in the image (not on a PVC), so **enabling E Commerce required an image
+rebuild**, not an in-place `bench install-app` (apps/ is ephemeral on this chart;
+only `sites/` is persistent). The Shopify app grants every read scope the
+migration needs (`read_inventory`, `read_locations`, `read_fulfillments`,
+`read_shipping`).
+
+### 12.2 Deploying an image change (read every time)
+```bash
+cd /home/orangey/workspace/helm-erpnext
+git commit -am "..." && git push                             # CI builds ghcr.io/gliax/erpnext
+# (or build locally if GitHub Actions runners are down:)
+DOCKER_BUILDKIT=1 docker build --build-arg CRM_REPO=... -t ghcr.io/gliax/erpnext:<tag> . \
+  && docker push ghcr.io/gliax/erpnext:<tag>                 # token needs write:packages
+# bump values.yaml image.tag, then:
+helm -n erpnext upgrade erpnext frappe/erpnext --version 8.0.21 \
+  -f values.yaml -f values.secret.yaml -f values.pin.yaml    # ALWAYS include values.pin.yaml
+kubectl -n erpnext rollout status deploy/erpnext-gunicorn
+```
+**Always take a DB backup first** (§10) — the migration writes to production.
+
+### 12.3 Three asset gotchas (the storefront goes blank if you miss one)
+The webshop frontend wouldn't render until all three were fixed in the Dockerfile:
+1. **Register apps in `sites/apps.txt`** before `bench build` — `bench get-app`
+   doesn't always do this in a siteless image build, so `bench build` skips them.
+2. **Rebuild the manifest from `dist/`** after `bench build`. `bench build`
+   recompiles bundle files (new content hashes) but does NOT keep
+   `assets/assets.json` in sync — so manifest entries point at non-existent
+   old-hash files (frappe/erpnext CSS 404s) and webshop's bundles go
+   unregistered. The Dockerfile scans `assets/*/dist/{js,css}/*.bundle.*` and
+   remaps every `<name>.bundle.{js,css}` to its real hashed file.
+3. **Flush valkey-cache after every asset-changing deploy.** `get_assets_json()`
+   caches the manifest in valkey-cache (`client_cache`, key `assets_json`), and
+   `bench clear-cache` does NOT flush it. After each such deploy:
+   ```bash
+   kubectl -n erpnext rollout restart deploy/erpnext-valkey-cache
+   ```
+   Symptom if skipped: `/all-products` renders blank or CSS 404s.
+
+### 12.4 Phase 1 — Catalog sync
+```bash
+glia-shop-setup                  # one-time schema prep (custom fields, Price List, Item Groups) — WRITES, backup first
+glia-shop-catalog-sync --dry-run --limit 5    # read-only Shopify preview
+glia-shop-catalog-sync                         # import (idempotent, resumable)
+```
+State (2026-08-06): 29 active products → 200 Items (15 templates + 171 variants
++ 14 simples), 189 prices, 29 Website Items (23 with images), 4 donation items.
+1 degraded (`Stethoscope` — pre-existing non-template, linked, variants skipped).
+
+Gotchas: Item Group root is `All Item Groups` (config: `shop.item_group_parent`);
+existing `Donation` group is singular (`shop.item_group_donations: "Donation"`).
+Pre-existing manufacturing `Size`/`Color` attributes use spelled-out values;
+Shopify uses abbreviations + mixed case — handled by parse-time normalization
+(`_norm_option`) + case-insensitive attribute dedup + collision-safe abbreviations.
+`website_image` can't be set as a bare URL (ERPNext blanks it) — a `File` doc
+referencing the Shopify URL is created per image (`_ensure_website_image`).
+
+### 12.5 Phase 3 — Customer sync
+```bash
+glia-shop-customer-sync --dry-run          # preview (customers-with-orders only)
+glia-shop-customer-sync                    # import (default: only orders_count > 0)
+glia-shop-customer-sync --all-customers    # include ~16k zero-order accounts
+```
+State: 4,265 customers-with-orders → ERPNext Customers + Shipping Addresses.
+Dedup via `Customer.shopify_customer_id`; donor `Contact`s (3,271) coexist —
+Customer↔Contact linking is deferred to the order phase. Default filter
+`orders_count:>0` skips zero-order noise; `--all-customers` includes everyone.
+
+### 12.6 Phase 5 — Checkout + Stripe
+```bash
+# 1. Put Stripe keys in .env (gitignored): STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY
+#    (optional: STRIPE_WEBHOOK_SECRET for reconciliation)
+# 2. Configure everything:
+glia-shop-checkout-setup
+```
+Creates `Payment Gateway` (Stripe) + `Stripe Settings` (keys) + `Payment Gateway
+Account` (`Stripe - CAD - Glia` → `03-743-20 … Chequing`), enables
+`Webshop Settings.enable_checkout`, and wires the payment gateway account.
+Idempotent — safe to re-run (skips Stripe if keys absent, so run setup before
+keys, then again after).
+
+**Stripe test (2026-08-06, live keys):** account `acct_1EXkQFEYuMS0KEUL` (CA),
+`charges_enabled=True`; created a live Checkout Session `cs_live_…` ($1.00 CAD)
+which returned a working `checkout.stripe.com` payment URL. Integration
+confirmed end-to-end. ⚠️ Keys are **live** (`pk_live`/`sk_live`) — any checkout
+test processes a real charge. For no-risk testing, swap in `pk_test`/`sk_test`
+keys and re-run setup, then use card `4242 4242 4242 4242`.
+
+### 12.7 Phase 4 — Order history backfill
+```bash
+glia-shop-order-sync --dry-run --limit 50    # preview (paid orders only)
+glia-shop-order-sync                          # backfill paid shop orders (idempotent)
+glia-shop-order-sync --all                    # include unpaid/non-paid
+```
+State (2026-08-06): **580 Sales Orders** (CAD $139,219.67), spanning FY 2019–2026.
+Only **non-donation** line items are placed on a Sales Order (donation orders are
+already `Donation` records); pure-donation orders and orders for un-imported
+(archived) products are skipped ("no shop items"). Customer is the migrated
+`Customer` (Phase 3); guest orders use the `Shopify Guest` customer. Payment
+Entry creation is deferred (the Sales Order is the order record).
+
+Gotchas (all hit + fixed during the live backfill):
+- The company default warehouse `Stores - Glia` is **disabled** → Sales Order
+  items must set a valid warehouse (`shop.warehouse = "Finished Goods - Canada - Glia"`).
+- A template Item (has_variants) **can't be sold** on a Sales Order — only its
+  variants. `load_item_code_map` keys the product-id fallback to simple items
+  only, so an order whose variant wasn't imported is skipped (not errored).
+- ERPNext rejects posting dates outside an **active Fiscal Year**. The Glia site
+  only had FY 2024 + 2026; the backfill created **2015–2025** to cover order
+  history. Re-run after adding a missing FY if old orders error with
+  `FiscalYearError`.
+- Shopify's GraphQL `financial_status` query filter is unreliable → paid status
+  is filtered **client-side** (the donation sync uses the same approach).
