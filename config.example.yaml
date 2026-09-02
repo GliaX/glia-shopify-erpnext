@@ -112,3 +112,8 @@ shop:
   customer_territory: "All Territories"
   guest_customer: "Shopify Guest"
   warehouse: "Finished Goods - Canada - Glia"
+
+# LaunchGood donor/donation import (glia-sync-launchgood).
+launchgood:
+  account_id: ""
+  token_file: "./launchgood_auth.json"

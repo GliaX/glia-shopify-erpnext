@@ -24,6 +24,8 @@ htmlcov/
 # Runtime state / data
 state.json
 state.json.*
+launchgood_auth.json
+.scratch/
 inbox/
 archive/
 errors/

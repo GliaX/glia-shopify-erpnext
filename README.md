@@ -104,6 +104,52 @@ glia-sync-send-test --keep       # ...keep it for inspection in the UI
 > The setup/send-test CLIs **write** to ERPNext. Take a DB backup first
 > (see [`GliaX/helm-erpnext`](https://github.com/GliaX/helm-erpnext) README).
 
+## LaunchGood import
+
+`glia-sync-launchgood` scrapes donors + individual donations from LaunchGood
+into the same Contact + Donation doctypes (external IDs prefixed `launchgood:`,
+so dedup coexists with Shopify/Patreon records). LaunchGood has **no public
+API**, so the client (`launchgood_client.py`) talks to their internal APIs
+with two workarounds:
+
+* **Cloudflare bot protection** — plain HTTP gets 403; `curl_cffi` with Chrome
+  TLS impersonation passes.
+* **Auth** — password login is reCAPTCHA-guarded and the OAuth token exchange
+  is server-side, so neither is scriptable. Instead: log in at launchgood.com
+  in a browser, copy `localStorage.getItem("token")` from devtools, and save it
+  with `glia-sync-launchgood login --access-token '<token>'` (cached in
+  `launchgood_auth.json`, gitignored; re-paste when it expires).
+
+Data sources (account **9657** = "Glia Inc.'s Business Account"):
+
+| What | Endpoint | Contains |
+|---|---|---|
+| Donors | `GET api.launchgood.com/v4/accounts/{id}/donors` | name, **email**, country, totals |
+| **Donor Report CSV** (per campaign) | `POST /api/projectreports/downloadInfo` → `POST /api/reports/action` (generate → poll status) → S3 | one row per donation: Donation ID, **real name + email + billing address** (even for publicly-"Anonymous" donors), amounts in donor + project currency |
+| Donations feed (fallback) | `POST www.launchgood.com/api/projectapi/donors` | per-donation public fields only (no email), used when the report is unavailable for a campaign |
+| Campaign names | `GET v3.launchgood.com/v3/cards/campaign/by-id/{id}` | id → Name/Slug |
+
+The CSV report is the primary donation source: donations link to Contacts by
+email (reusing existing Shopify/Patreon contacts on email match); rows with
+masked/malformed emails fall back to name+country-keyed contacts. Old
+(2022-era) reports lack the donor-currency columns — `Amount (PC)` covers
+both. Only `Charged` rows import (pending/refunded skipped).
+
+```bash
+glia-sync-launchgood login                 # save the browser session token
+glia-sync-launchgood campaigns             # list the org's 57 campaigns
+glia-sync-launchgood sync --dry-run --dump-dir dump/   # fetch + save raw JSON, no writes
+glia-sync-launchgood sync                  # write Contacts + Donations (idempotent)
+glia-sync-launchgood sync --since 2026-01-01 --campaign-id 367369  # filtered
+```
+
+Known gaps: donor records have no phone (recurring subscribers have phone +
+address via `/v4/accounts/{id}/recurring-plans/subscribers` — not yet
+imported); the `Donation.source` Select needs "LaunchGood" in its options
+(`donation_doctype.py`; already applied on asset.glia.org — clear cache after
+changes). Campaign 87870 rejects report generation ("Invalid project or you do
+not have permission") and falls back to the public feed.
+
 ## Repo layout
 
 ```

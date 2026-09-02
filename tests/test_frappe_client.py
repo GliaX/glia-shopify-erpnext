@@ -81,6 +81,53 @@ def test_5xx_is_retried_then_raises():
     assert attempts["n"] == 3  # retried up to max_attempts
 
 
+def test_transport_connection_error_is_retried_then_raises():
+    import requests
+
+    attempts = {"n": 0}
+
+    def transport(method, url, *, headers, params, json, timeout):
+        attempts["n"] += 1
+        raise requests.exceptions.ConnectionError("Connection reset by peer")
+
+    c = FrappeClient(
+        base_url="https://x.example",
+        api_key="k",
+        api_secret="s",
+        transport=transport,
+        max_attempts=3,
+        initial_wait_seconds=0.001,
+        max_wait_seconds=0.001,
+    )
+    with pytest.raises(FrappeError, match="transport error"):
+        c.get("CRM Contact", "x")
+    assert attempts["n"] == 3
+
+
+def test_transport_connection_error_recovers_within_budget():
+    import requests
+
+    attempts = {"n": 0}
+
+    def transport(method, url, *, headers, params, json, timeout):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise requests.exceptions.ConnectionError("reset")
+        return _resp(200, {"data": {"ok": True}})
+
+    c = FrappeClient(
+        base_url="https://x.example",
+        api_key="k",
+        api_secret="s",
+        transport=transport,
+        max_attempts=3,
+        initial_wait_seconds=0.001,
+        max_wait_seconds=0.001,
+    )
+    assert c.get("CRM Contact", "x") == {"ok": True}
+    assert attempts["n"] == 2
+
+
 def test_5xx_recovers_within_budget():
     seq = iter([_resp(503, text="down"), _resp(200, {"data": {"ok": True}})])
 

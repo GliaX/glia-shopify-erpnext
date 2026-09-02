@@ -18,7 +18,15 @@ Shopify store and their ERPNext instance. It has two distinct efforts:
    Pushes Shopify **donation** line items (a curated allow-list of 17 donation
    product IDs in `config.yaml`) into ERPNext CRM as core `Contact` + a custom
    `Donation` doctype (module `Glia`). Patreon donors also synced. Runs as k8s
-   CronJobs. See `README.md` and `OPERATIONS.md`.
+   CronJobs. See `README.md` and `OPERATIONS.md`. **LaunchGood** donors +
+   donations are imported too (`launchgood_client.py` / `launchgood_sync.py`,
+   CLI `glia-sync-launchgood`): LaunchGood has no public API, so it scrapes
+   their internal v3+v4 APIs — `curl_cffi` Chrome impersonation to pass
+   Cloudflare, Bearer token copied from the browser's `localStorage.token`
+   (OAuth exchange is server-side, password login is reCAPTCHA-guarded; token
+   cached in gitignored `launchgood_auth.json`). Account id **9657** ("Glia
+   Inc.'s Business Account"). External IDs use the `launchgood:` prefix.
+   See `README.md` §LaunchGood import.
 
 2. **Shop migration** (IN PROGRESS) — `src/glia_shopify_sync/shop/` sub-package.
    Full recreation of the Shopify store (products, variants, prices,

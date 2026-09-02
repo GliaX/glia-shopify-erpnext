@@ -77,7 +77,7 @@ def _donation_fields() -> list[dict[str, Any]]:
             "fieldname": "source",
             "label": "Source",
             "fieldtype": "Select",
-            "options": "\nShopify\nPatreon",
+            "options": "\nShopify\nPatreon\nLaunchGood",
             "default": "Shopify",
             "in_list_view": 1,
             "in_standard_filter": 1,

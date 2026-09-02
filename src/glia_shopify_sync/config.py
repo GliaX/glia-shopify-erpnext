@@ -187,6 +187,17 @@ class ShopConfig(BaseModel):
     payment_account: str = "03-743-20 - Canadian Chequing Account - Glia"
 
 
+class LaunchGoodConfig(BaseModel):
+    """LaunchGood scrape settings (see launchgood_client.py — no public API)."""
+
+    # Org account id (from the LaunchGood dashboard URL / session). Empty = derive
+    # from the OAuth session at runtime.
+    account_id: str = ""
+    # Where OAuth tokens (+ pending PKCE state) are cached. Contains secrets —
+    # keep gitignored (launchgood_auth.json is in .gitignore).
+    token_file: Path = Path("./launchgood_auth.json")
+
+
 class YamlConfig(BaseModel):
     """Non-secret configuration loaded from config.yaml."""
 
@@ -201,6 +212,7 @@ class YamlConfig(BaseModel):
     retry: RetryConfig = Field(default_factory=RetryConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     shop: ShopConfig = Field(default_factory=ShopConfig)
+    launchgood: LaunchGoodConfig = Field(default_factory=LaunchGoodConfig)
 
 
 class AppConfig:

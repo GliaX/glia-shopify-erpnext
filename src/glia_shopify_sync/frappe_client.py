@@ -276,14 +276,19 @@ class FrappeClient:
     ) -> FrappeResponse:
         @self._retry
         def _call() -> FrappeResponse:
-            resp = self._transport(
-                method,
-                self._url(path),
-                headers=self._headers(),
-                params=params,
-                json=json,
-                timeout=self.timeout,
-            )
+            try:
+                resp = self._transport(
+                    method,
+                    self._url(path),
+                    headers=self._headers(),
+                    params=params,
+                    json=json,
+                    timeout=self.timeout,
+                )
+            except Exception as e:
+                # Transport-level failure (connection reset/timeout/DNS): the
+                # request never got an HTTP response, so treat as transient.
+                raise _TransientError(f"transport error on {method} {path}: {e}") from e
             if 400 <= resp.status_code < 500:
                 body = (resp.text or "")[:500]
                 raise FrappeError(f"Frappe {resp.status_code} on {method} {path}: {body}")
