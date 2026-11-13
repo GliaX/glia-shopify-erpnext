@@ -25,16 +25,22 @@
 | **Phase 6 Ongoing sync** | **Not started** (webhooks / scheduled deltas). |
 | **Tests** | 105 passing; ruff + format clean. |
 
-### 🔴 The #1 pending action: **commit the glia-shopify-erpnext code**
-Every line of shop-migration code (`src/glia_shopify_sync/shop/`, tests, config,
-`AGENTS.md`, this file) is **uncommitted** locally. The infra repo
-(`helm-erpnext`) is fully committed/pushed, but the sync toolkit is not. If the
-workspace is lost, ~2,000 lines of work + all the live-run lessons vanish.
-Commit it before doing anything else:
-```bash
-cd /home/orangey/workspace/glia-shopify-erpnext
-git add -A && git commit -m "Shop migration: catalog + customers + orders + checkout (Phases 1,3,4,5)"
-```
+### ✅ Code commit — DONE (verified 2026-11-13)
+
+The old "commit before doing anything else" warning is resolved: the working
+tree is clean and Phases 1/3/4/5 (+ LaunchGood) are on `main` (shop-migration
+work through `364d1db`), remote
+`git@github.com:GliaX/glia-shopify-erpnext.git`. The image tag is now
+`ghcr.io/gliax/erpnext:v16.30.0-crm-v1.80.0-emailbuilder5`.
+
+### Next phase: staging + cutover plan
+
+The actual move of `glia.org` off Shopify is staged in
+**`~/workspace/glia-server/glia-org-shopify-to-erpnext-staging-plan.md`**
+(staging site, content/theme parity, the donation/recurring/account gaps, DNS
+cutover, rollback). Read it before starting Phase 6 — it supersedes this file's
+§6 "What's left" as the execution checklist. Credentials/DNS/TLS access are
+documented in `~/workspace/glia-server/ACCESS.md` §7–§11.
 
 ---
 
