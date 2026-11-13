@@ -42,6 +42,15 @@ cutover, rollback). Read it before starting Phase 6 — it supersedes this file'
 §6 "What's left" as the execution checklist. Credentials/DNS/TLS access are
 documented in `~/workspace/glia-server/ACCESS.md` §7–§11.
 
+### Content/theme bootstrap — DONE (2026-11-13)
+
+The storefront look and content scaffolding are live on `asset.glia.org`:
+custom `Blog` / `Blog Category` / `Blog Post` doctypes, 38 published articles,
+83 Web Pages, a Glia navbar/footer/donation bar, and a rebuilt homepage.
+Artifacts, re-apply commands and rollback live in
+`~/workspace/glia-server/glia-theme/` (README there). This is scaffolding, not
+final fidelity — inline Shopify-CDN images still need localising.
+
 ---
 
 ## 1. Timeline (what actually happened, in order)
