@@ -48,8 +48,9 @@ The storefront look and content scaffolding are live on `asset.glia.org`:
 custom `Blog` / `Blog Category` / `Blog Post` doctypes, 38 published articles,
 83 Web Pages, a Glia navbar/footer/donation bar, and a rebuilt homepage.
 Artifacts, re-apply commands and rollback live in
-`~/workspace/glia-server/glia-theme/` (README there). This is scaffolding, not
-final fidelity — inline Shopify-CDN images still need localising.
+`~/workspace/glia-server/glia-theme/` (README there). All remote Shopify assets
+were localised on 2026-11-13 (260 unique assets → 287 `/files/shopify-*` docs,
+~92 MB, 0 remote refs); audit scripts are in `glia-theme/localization/`.
 
 ---
 
