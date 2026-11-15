@@ -15,8 +15,11 @@
 | Area | Status |
 |---|---|
 | **Two repos** | `glia-shopify-erpnext` = the sync toolkit (this repo). `helm-erpnext` = the ERPNext image/helm chart (infra). |
-| **Custom image** | `ghcr.io/gliax/erpnext:v16.30.0-crm-v1.80.0-ecommerce2` (frappe/erpnext + crm + payments + webshop). **Deployed.** |
+| **Custom image** | `ghcr.io/gliax/erpnext:v16.30.0-crm-v1.80.0-emailbuilder5-guestcheckout3-donations4` (frappe + erpnext + crm + payments + webshop + email builder + guest checkout + donations). **Deployed.** |
 | **E Commerce** | Installed (webshop + payments apps). Storefront live at `/all-products`. |
+| **Guest checkout** | `glia_guest_checkout` 0.0.2 — <https://github.com/GliaX/glia-guest-checkout>. Anonymous cart + checkout at `/guest_cart`. **Deployed & tested.** |
+| **Recurring gifts** | `glia_donations` 0.1.3 — <https://github.com/GliaX/glia-donations>. Stripe Billing subscriptions, webhook → `Donation`, `/recurring_donation` cancel page. **Deployed & tested.** |
+| **Backups** | CronJob `erpnext-backup`, 03:30 daily, off-cluster to Nextcloud, restore proven. See `helm-erpnext/backup/README.md`. **Live.** |
 | **Phase 1 Catalog** | 29 active products → 200 Items, 171 variants, 189 prices, 29 Website Items (23 with images). |
 | **Phase 2 Shipping** | No-op (Shopify has 30 zones, 0 rates — merch is POD-fulfilled). |
 | **Phase 3 Customers** | 4,265 customers-with-orders imported. |
@@ -51,6 +54,62 @@ Artifacts, re-apply commands and rollback live in
 `~/workspace/glia-server/glia-theme/` (README there). All remote Shopify assets
 were localised on 2026-11-13 (260 unique assets → 287 `/files/shopify-*` docs,
 ~92 MB, 0 remote refs); audit scripts are in `glia-theme/localization/`.
+
+### Guest checkout — DONE (2026-11-14)
+
+Upstream webshop has no guest checkout (open issue
+<https://github.com/frappe/webshop/issues/122>): its cart is a `Quotation` keyed
+on `contact_email = frappe.session.user`, so anonymous shoppers are redirected
+to `/login`. We wrote our own app instead of patching webshop:
+
+- Repo: <https://github.com/GliaX/glia-guest-checkout> (public, Frappe app
+  `glia_guest_checkout` 0.0.2), baked into the image by
+  `helm-erpnext/Dockerfile` (`GUEST_CHECKOUT_REPO` / `_BRANCH`) — a new commit
+  there needs a **new image tag**, not just a bench reload.
+- Cart = `Guest Cart` doc behind an HttpOnly `guest_cart_id` cookie (30 days);
+  shop pages `/guest_cart` and `/guest_order?token=…`; `guest_checkout.js`
+  rewrites `/cart` links and intercepts add-to-cart for guests.
+- Order path: Customer/Contact/Address → Quotation (Shopping Cart) → Sales Order
+  → Payment Request → existing `/stripe_checkout`. Document creation runs as
+  Administrator (a Guest cannot insert Items/Quotations); the request itself
+  stays Guest and `allow_guest` APIs refuse logged-in users.
+- Guards: variant templates (`has_variants` without `variant_of`) and any line
+  that prices at ≤ 0 are rejected at add-to-cart *and* again before the
+  quotation is submitted — a template added directly used to produce a 0 CAD
+  order, which is exactly the bug 0.0.2 fixes.
+- Verified end-to-end on the deployed image: `/guest_cart` 200, add-to-cart 200,
+  checkout created `SAL-ORD`+`ACC-PRQ` and a working Stripe URL; the test
+  documents were then deleted.
+- Open gaps: recurring donations, donation records/hooks, tax + shipping rules,
+  fulfilment, reconciliation, and cart merging on login.
+
+### Recurring gifts — DONE (2026-11-15)
+
+Monthly donations bill through Stripe Billing via a second app,
+`glia_donations` (<https://github.com/GliaX/glia-donations>, tag `v0.1.3`):
+
+- Doctypes `Recurring Donation` (status/Stripe ids/totals/cancel token) and
+  `Donation Settings` (single). The app only *adds* fields to the DB-level
+  `Donation` doctype (`stripe_invoice_id`, `stripe_payment_intent`,
+  `recurring_donation`), relaxes the Shopify-only required fields and adds the
+  `Website` source — it never redefines `Donation`.
+- `POST glia_donations.api.start_recurring_donation` → hosted Stripe Checkout
+  (`mode=subscription`), price reused by lookup key `glia_monthly_cad_<cents>`.
+- `POST glia_donations.webhooks.stripe_webhook` (signed; endpoint
+  `we_1Ubx4lEYuMS0KEULfw5VLirp`): checkout completed → Active, `invoice.paid` →
+  `Donation`, payment failed → Past Due, subscription deleted → Cancelled.
+  Idempotent on `stripe_invoice_id`.
+- `/recurring_donation?token=…` → donor sees status/totals and can cancel
+  (immediate Stripe cancellation). Receipts queue to the worker (an SMTP failure
+  must not fail the webhook — it once did, hence `enqueue_after_commit`).
+- **The `Stripe Settings` record did not exist at all**, so one-off checkout had
+  no credentials; it now holds the live keys (record name `Stripe`, autonamed on
+  gateway_name — that is what the ERPNext gateway looks up).
+- Verified: full webhook lifecycle with signed events, bad signature → 401, a
+  live subscription Checkout session created then expired (no charge), and
+  `/stripe_checkout` now renders with `pk_live_…`.
+- Still open: one-off cart donations create only a Sales Order (gap: Sales Order
+  → `Donation` hook); no ledger/Payment Entry booking for recurring charges.
 
 ---
 
