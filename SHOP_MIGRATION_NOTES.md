@@ -110,6 +110,44 @@ to `/login`. We wrote our own app instead of patching webshop:
   still blocks cutover" (currently: tax). Backups, redirects, accounts and both
   donation paths report OK; fulfilment warns on missing tracking fields.
 
+### Review round: Adam's QA list (2026-11-15)
+
+Verified each item against the live site before touching anything; several were
+already fine. Fixed:
+
+- **Broken article link** (`/blog/news/glia.org/glia4gaza` → 500): the content
+  had `href="glia.org/glia4gaza"` (relative). Rewritten to `/glia4gaza`; both
+  ExFix articles now return 200 with zero broken internal links.
+- **Newsletter accepted anything**: `notanemail` (and "darpa") were stored and
+  thanked. New `glia_guest_checkout.api.subscribe_newsletter` validates the
+  address server-side, de-duplicates, and is rate-limited per email; the footer
+  validates client-side too. Invalid → 417 with a clear message.
+- **Add-to-cart UX**: modal alert replaced with a toast, header badge updates
+  immediately (Frappe + webshop counters), no forced redirect to the cart, and
+  adding again increments instead of sticking at one.
+- **Favicon** was a near-blank white PNG; replaced with a dark "G" on cream
+  (readable light/dark). `push_design.py` now carries the new path so design
+  pushes stop reverting it.
+- **Empty shop flash**: products render client-side, so `/all-products` looked
+  broken until JS finished. Added "Loading products…" + an image skeleton.
+- **Duplicate blog**: "Engagement Hub – Opportunities at Glia" had 0 posts and
+  duplicated "Get Involved"; unpublished. Blog index now lists 4 blogs.
+- **Steth of Hope had no image**: pulled `SOH-EricImage.png` from Shopify and
+  attached it to the Website Item and Item.
+
+Already fine (no action needed): donation product pages (they do have variant
+pickers and add-to-cart), R&D / 3D-printing section donate links, press-kit
+contact link, tourniquet/kidney-cap now using ERPNext product cards, contact-form
+wording, and no unexplained "donating*" asterisk anywhere in content.
+
+Still open — **content, not code**: `meet-the-team` (13 chars), `faqs` (4),
+`glia-x-rajaeen` (14), `support-glia-medical-solidarity-with-palestine` and
+`restoring-care-in-gaza` (236) are near-empty. Shopify's own pages for the first
+three have **empty bodies too** (they are section-built), so their copy has to be
+reconstructed from the rendered Shopify pages or written fresh. Also needs a human
+call: what to do with Steth-of-Hope and funds raised for Eric, and whether the
+currency label becomes a real multi-currency selector.
+
 ### Recurring gifts — DONE (2026-11-15)
 
 Monthly donations bill through Stripe Billing via a second app,
