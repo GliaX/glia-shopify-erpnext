@@ -204,6 +204,34 @@ listing rendered its heading as a `<div>` (now a real `<h1>`), and
 Not closed: the live article page has a right-hand sidebar (tag list + "Read
 more"); ours does not. That is template work, not CSS.
 
+### Cutover plumbing (2026-11-15, later)
+
+- **robots.txt** was a 0-byte 200 response (the `Website Settings.robots_txt`
+  field was empty). It now disallows `/desk`, `/app`, `/api`, `/login`,
+  `/guest_cart`, `/guest_order`, `/search` and points at `/sitemap.xml`
+  (86 URLs, all sampled ones 200).
+- **Newsletter consent (CASL):** the footer posted `consent=1` implicitly. It now
+  has an explicit checkbox with a privacy-policy link, validated client side
+  *and* server side (`subscribe_newsletter` refuses without consent). A
+  `/privacy-policy` page was written (there was none on Shopify either).
+- **Readiness check now verifies redirects by following them.** Presence was
+  never proof — that is how a looping redirect passed as healthy. It samples
+  product/page/collection/blog sources, follows up to 6 hops with urllib's
+  auto-redirect disabled, and requires a final 200 in at most three hops. Pages
+  that exist only on the new site (`privacy-policy`) no longer count as gaps.
+- **Article sidebar** (categories + "Read more") rendered client-side from
+  `glia_ops.api.related_posts`, because the article template is Frappe's own.
+- **Tests:** `bench run-tests --app ...` for all three apps (redirect normaliser,
+  donation-item classification incl. the Gray Area trap, donation amount →
+  variant mapping). The redirect test caught a real bug: `absolute()` was
+  referenced by the generator but never defined, so `generate_redirects` would
+  have raised `NameError`.
+- **Restore drill:** newest backup was pulled back from the **dedicated** Spaces
+  bucket, archives verified, and the dump restored into a scratch database:
+  4,275 customers, 14,927 contacts, 17,200 donations, 580 sales orders, 29
+  website items, 38 blog posts, 83 web pages — matching production. Scratch DB
+  dropped afterwards.
+
 ### Recurring gifts — DONE (2026-11-15)
 
 Monthly donations bill through Stripe Billing via a second app,
