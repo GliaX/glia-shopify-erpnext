@@ -148,6 +148,39 @@ reconstructed from the rendered Shopify pages or written fresh. Also needs a hum
 call: what to do with Steth-of-Hope and funds raised for Eric, and whether the
 currency label becomes a real multi-currency selector.
 
+### Thin pages rebuilt from the rendered Shopify site (2026-11-15)
+
+Shopify's Admin API returns an **empty `body`** for section-built pages (Meet the
+Team, FAQs, Glia X Rajaeen, Run For Palestine, Medical Solidarity, Restoring
+Care) — their content lives in theme sections. `scrape_pages.py` therefore
+rebuilds them from the rendered storefront page:
+
+| page | before | after |
+|---|---|---|
+| `/meet-the-team` | 13 chars | 21 people with portraits, Canada/Gaza groups |
+| `/faqs` | 4 chars | full FAQ incl. donation-methods PDF copied to `/files` |
+| `/glia-x-rajaeen` | 14 chars | partnership copy + 3 images |
+| `/restoring-care-in-gaza` | 236 chars | 10k chars of campaign copy + progress figures |
+| `/glia4gaza` | 0 chars of body copy | 7k chars + own donate CTAs |
+| `/run-for-palestine-2026` | 90 chars | event details + donate CTAs |
+
+How it works: keep only semantic content inside `<main>`, lift lazyloaded
+`<noscript>`/`data-bgset` images, upload every Shopify CDN image and document to
+ERPNext `/files`, rewrite `/pages/*`, `/products/*`, `/collections/*` and
+`/blogs/*` onto the new routes, strip Shopify's donation-app widgets and inject
+CTA links to our own flows. The duplicate `/the-glia-x-rajaeen-collection` page
+was unpublished and 301'd to `/glia-x-rajaeen`.
+
+### SEO redirects — corrected (2026-11-15)
+
+The earlier "125/125 return 301" claim was measured without following the
+redirect. Targets were stored relative, and Frappe interpolates them verbatim,
+so nested paths looped (50 hops) or landed on 404s. Targets are now normalised to
+a leading slash (`glia_ops` v0.1.7 + a migration of the 139 existing rows), the
+truncated press-release route got its own hop, and the honest check — follow to
+the end — gives **125/125 final 200, one hop, zero loops**. Frappe caches
+redirects in-process, so bulk edits need a `gunicorn` restart.
+
 ### Recurring gifts — DONE (2026-11-15)
 
 Monthly donations bill through Stripe Billing via a second app,
