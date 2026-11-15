@@ -181,6 +181,29 @@ truncated press-release route got its own hop, and the honest check — follow t
 the end — gives **125/125 final 200, one hop, zero loops**. Frappe caches
 redirects in-process, so bulk edits need a `gunicorn` restart.
 
+### Visual regressions measured against the live site (2026-11-15)
+
+Visual claims were measured rather than eyeballed: `measure_visual.py` loads both
+sites in headless Chromium at 1440x900 and compares computed font sizes, element
+boxes, clipping, scrollbars and button styles.
+
+| finding | before | now | live |
+|---|---|---|---|
+| titles cut off | 3/12 home h2 clipped (51.8px text in 46px box) | 0 clipped | 0 |
+| fonts smaller | hero 17 / body 17 / article 16 / product 13 / press 14 px | 20 / 18 / 17 / 16 px | 20 / 16-17 |
+| logo smaller | 64px, 82px header | 100px, 112px header | ~100px, ~112px |
+| selected buttons solid | grid/list toggle solid grey + white text | cream + teal outline, unselected transparent | outlined |
+| scrollbars always visible | empty `#product-scroll` with inline `overflow:scroll` | 0 useless scroll containers | 0 |
+| contact form | Send 51x29 black chip | 530x61 cream button, 19px, white fields | 540x61, 20px |
+| article column | centred, 980px cover | left-aligned 780px (live 793) | left-aligned + sidebar |
+
+Also found and fixed while measuring: the homepage had **no `<h1>`**, the shop
+listing rendered its heading as a `<div>` (now a real `<h1>`), and
+`/press-releases` + `/pages/press` 404'd — both now 301 to the press-release list.
+
+Not closed: the live article page has a right-hand sidebar (tag list + "Read
+more"); ours does not. That is template work, not CSS.
+
 ### Recurring gifts — DONE (2026-11-15)
 
 Monthly donations bill through Stripe Billing via a second app,
