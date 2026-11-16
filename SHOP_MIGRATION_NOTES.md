@@ -232,6 +232,19 @@ more"); ours does not. That is template work, not CSS.
   website items, 38 blog posts, 83 web pages — matching production. Scratch DB
   dropped afterwards.
 
+### Shipping weights — imported from Shopify (2026-11-15)
+
+Shopify *does* store weights (`InventoryItem.measurement.weight`, POD merch in ounces),
+even though ERPNext had only 1 of 122 saleable items weighted. Imported **101 items**
+(all converted to grams: 92 by `shopify_variant_id`, 6 single-variant products by
+`shopify_product_id`, plus the Stethoscope Parts Kit). Every published physical product
+now has a weight; unweighted items are donations/services/workshops/gift card and
+internal manufacturing parts.
+
+Missing: **dimensions** — Shopify has no L×W×H fields at all — and **Canada Post API
+access** (developer-portal OAuth client + customer/contract number) before live rating
+can be wired at checkout. See OpenProject WP #1192 (Shopify to ERPNext Website Migration).
+
 ### Sales tax — DONE (2026-11-15)
 
 Tax was the last cutover blocker and is now configured and proven:
