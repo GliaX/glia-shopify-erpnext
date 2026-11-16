@@ -232,6 +232,15 @@ more"); ours does not. That is template work, not CSS.
   website items, 38 blog posts, 83 web pages — matching production. Scratch DB
   dropped afterwards.
 
+### Shipping packaging — from Jen (2026-11-15)
+
+Uline bubble mailers #2 (S-22456, 8½×12 in outside) and #5 (S-22457, 10½×16 in), plus a
+large 22×12×8 in box (S-21050); medium box still to come. Recorded as three
+`Shipment Parcel Template` records (cm) in ERPNext. Packaging weights: 23 g / 36 g /
+~580 g — ERPNext's template weight field is kg to 1 decimal, so these live in the
+shipping module config. Jen's piece weights (130 g stethoscope, 80 g tourniquet,
+14 g kidney-cap) match the Shopify import exactly.
+
 ### Shipping weights — imported from Shopify (2026-11-15)
 
 Shopify *does* store weights (`InventoryItem.measurement.weight`, POD merch in ounces),
