@@ -241,6 +241,15 @@ large 22×12×8 in box (S-21050); medium box still to come. Recorded as three
 shipping module config. Jen's piece weights (130 g stethoscope, 80 g tourniquet,
 14 g kidney-cap) match the Shopify import exactly.
 
+### Parcel estimate in the cart (2026-11-15)
+
+`glia_guest_checkout.shipping` picks packaging from Jen's practice (#2 mailer at most two
+stethoscopes → ≤ 2 items / ≤ 300 g; #5 ≤ 1.5 kg; large box beyond) and computes gross
+weight including packaging (23 / 36 / 580 g). The guest-cart API now returns
+`shipping_estimate` with packaging SKU, dimensions in cm and content/gross grams —
+verified live: 1 stethoscope → #2 / 153 g, 2 → #2 / 283 g, 3 → #5 / 426 g, donations
+→ none. 7 new tests (18 total). This is the surface a Canada Post rate call will use.
+
 ### Shipping weights — imported from Shopify (2026-11-15)
 
 Shopify *does* store weights (`InventoryItem.measurement.weight`, POD merch in ounces),
