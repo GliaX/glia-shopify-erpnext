@@ -232,6 +232,33 @@ more"); ours does not. That is template work, not CSS.
   website items, 38 blog posts, 83 web pages — matching production. Scratch DB
   dropped afterwards.
 
+### Sales tax — DONE (2026-11-15)
+
+Tax was the last cutover blocker and is now configured and proven:
+
+* **Rates** (verified against CRA/2026 references): ON 13% HST, NS 14% HST (cut from
+  15% on 2025-04-01), NB/NL/PE 15% HST, AB/YT/NT/NU 5% GST, BC 5%+7% PST,
+  MB 5%+7% RST, SK 5%+6% PST, QC 5%+9.975% QST, exports 0%. The pre-existing
+  templates were wrong for the two busiest provinces (no 13% or 14% at all).
+* **Mechanism**: ERPNext cannot vary rates by destination *and* exempt individual
+  lines in one document, so the guest checkout resolves the destination template
+  itself (`glia_guest_checkout.taxes`), requires a province for Canadian orders,
+  and refuses to mix merchandise with donations. Donations stay untaxed; a
+  donation order strips any template inherited from the cart quotation (found a
+  50 gift being billed 56.50 before the fix).
+* **Data**: 8 rate templates, 3 new tax accounts (QST 9.975, RST 7, PST 6),
+  13 province Tax Rules, BN `807831391` on the company. No template is a company
+  default — a default leaked onto quotations and therefore donations.
+* **Checkout form**: province became a required selector (13 provinces), with a
+  client-side guard and a note that tax is calculated at checkout.
+* **Proof**: $40 stethoscope → 45.20 ON, 45.60 NS, 44.80 BC, 45.99 QC, 40.00 US;
+  $50 donation → 50.00. Tests: 11 in `glia_guest_checkout` (mapping, taxability,
+  module imports) plus 4 in `glia_ops`.
+
+Open items: confirm the **RT** suffix of the BN for invoice printing (the folder
+shows the RC account), and shipping is taxable once shipping charges exist
+(0 Shipping Rules today).
+
 ### Recurring gifts — DONE (2026-11-15)
 
 Monthly donations bill through Stripe Billing via a second app,
