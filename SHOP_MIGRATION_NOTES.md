@@ -263,6 +263,23 @@ Missing: **dimensions** — Shopify has no L×W×H fields at all — and **Canad
 access** (developer-portal OAuth client + customer/contract number) before live rating
 can be wired at checkout. See OpenProject WP #1192 (Shopify to ERPNext Website Migration).
 
+### Tier 2 (first batch) — deployed 2026-11-21
+
+* **Volunteer page** (`/volunteer`): five skill areas described, sign-up form. Submissions
+  create a **Volunteer Interest** record (desk-managed, status New/Contacted/Placed/Declined)
+  and email info@glia.org. Footer link added. (A first attempt wrote to `Lead`; Frappe's
+  insert failed inside `set_user_and_timestamp`, so it has its own doctype.)
+* **Donor portal** (`/my_donations`, footer "My account"): signed-in donors see gifts
+  (date, project, type, amount, total given) and orders; guests redirect to login.
+  Verified with a real user and a $21.50 gift.
+* **Project-tied donations** (#406): project pages have "Support this project" CTAs passing
+  `?campaign=…`; the donation bar forwards it through one-time and recurring flows; the cart
+  line and Sales Order carry `campaign:<slug>` and the Donation record stores it on payment.
+* **Post-purchase gift CTA** (#407): the confirmation page offers "Make a gift too".
+
+Remaining Tier 2: impact content (#429/#430), refunds (#425), event giving goals/QR (#426),
+other payment methods (#410), APIL storefront sharing (#301), distribution tracking (#317).
+
 ### Tier 1 fixes — deployed 2026-11-21
 
 All nine quick wins from the work-package audit are deployed and verified live:
