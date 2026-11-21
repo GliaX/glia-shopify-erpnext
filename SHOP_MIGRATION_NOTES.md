@@ -263,6 +263,33 @@ Missing: **dimensions** — Shopify has no L×W×H fields at all — and **Canad
 access** (developer-portal OAuth client + customer/contract number) before live rating
 can be wired at checkout. See OpenProject WP #1192 (Shopify to ERPNext Website Migration).
 
+### Tier 1 fixes — deployed 2026-11-21
+
+All nine quick wins from the work-package audit are deployed and verified live:
+
+* **Gifts need no address** — donation checkout was returning HTTP 500 `TypeError`
+  because the API required address fields; address is now required only for physical
+  orders. Verified: $50 gift → order at CAD 50.
+* **Custom donation amounts** — the widget's Custom option used to be refused by the
+  backend. Any 1–10,000 now works; the amount is carried on the cart line and enforced
+  on the quotation/Sales Order (verified 37 → 37; `apply_cart_settings` was re-pricing
+  lines and silently turning 37 into 5000 — cart amounts are restored after it).
+* **Confirmation page** — `/payment-success` was 500 for guests. Now a real page with
+  amount, reference and an order link (`payment_success` + a website route rule, since
+  Frappe cannot import a hyphenated controller).
+* **Projects index** — `/projects` → `/project` 403 fixed; a card index now lists the
+  four projects with donate CTAs and GitHub link; `shop` redirects to `/all-products`.
+* **Warehouse** — `Stores - Glia` (the default, disabled) enabled; draft PO validates.
+* **Donor phones** — 4,126 contacts got a phone from Shopify default addresses (was 0).
+* **Stock label + oversell guard** — product page shows `Available to order` while stock
+  is unseeded; cart refuses above available stock once seeded.
+* **Cookie banner** — accept/refuse, remembered, links privacy policy (browser-verified).
+* **Receipts for one-off gifts** — every donation now gets a receipt with amount, date,
+  BN 807831391 and an acknowledged flag (verified with a $12.50 gift).
+
+Open: stock counts need seeding; the BN's RT suffix for formal receipts; Stripe-only
+payment methods.
+
 ### Sales tax — DONE (2026-11-15)
 
 Tax was the last cutover blocker and is now configured and proven:
